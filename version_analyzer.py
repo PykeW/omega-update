@@ -9,12 +9,12 @@ import hashlib
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Tuple, Set
+from typing import Dict, Optional
 import argparse
 
 class FileInfo:
     """文件信息类"""
-    def __init__(self, path: str, size: int, mtime: float, sha256: str = None):
+    def __init__(self, path: str, size: int, mtime: float, sha256: Optional[str] = None):
         self.path = path
         self.size = size
         self.mtime = mtime
@@ -46,7 +46,7 @@ class VersionAnalyzer:
             print(f"计算哈希失败 {file_path}: {e}")
             return ""
     
-    def scan_directory(self, directory: Path, base_path: Path = None) -> Dict[str, FileInfo]:
+    def scan_directory(self, directory: Path, base_path: Optional[Path] = None) -> Dict[str, FileInfo]:
         """扫描目录，生成文件信息字典"""
         if base_path is None:
             base_path = directory
@@ -55,7 +55,7 @@ class VersionAnalyzer:
         
         print(f"扫描目录: {directory}")
         
-        for root, dirs, files in os.walk(directory):
+        for root, _, files in os.walk(directory):
             root_path = Path(root)
             
             for file_name in files:
@@ -153,7 +153,7 @@ class VersionAnalyzer:
             }
         }
     
-    def format_size(self, size_bytes: int) -> str:
+    def format_size(self, size_bytes: float) -> str:
         """格式化文件大小"""
         for unit in ['B', 'KB', 'MB', 'GB']:
             if size_bytes < 1024.0:
@@ -161,7 +161,7 @@ class VersionAnalyzer:
             size_bytes /= 1024.0
         return f"{size_bytes:.1f} TB"
     
-    def generate_report(self, comparison: Dict, output_file: str = None):
+    def generate_report(self, comparison: Dict, output_file: Optional[str] = None):
         """生成分析报告"""
         summary = comparison['summary']
         
