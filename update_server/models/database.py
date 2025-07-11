@@ -11,6 +11,11 @@ from sqlalchemy.sql import func
 from datetime import datetime
 import os
 
+# 数据库配置
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./omega_updates.db")
+
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 class Version(Base):
@@ -229,7 +234,7 @@ class DatabaseManager:
         self.engine.dispose()
 
 # 全局数据库管理器实例
-db_manager = DatabaseManager()
+db_manager = DatabaseManager(DATABASE_URL)
 
 def get_db():
     """获取数据库会话的依赖注入函数"""

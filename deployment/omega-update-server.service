@@ -1,0 +1,40 @@
+# Omega更新服务器systemd服务配置
+# 文件位置: /etc/systemd/system/omega-update-server.service
+
+[Unit]
+Description=Omega Update Server
+Documentation=https://github.com/your-org/omega-update
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=omega
+Group=omega
+WorkingDirectory=/opt/omega-update-server
+Environment=PATH=/opt/omega-update-server/venv/bin
+ExecStart=/opt/omega-update-server/venv/bin/python main.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/omega-updates /var/log/omega-updates /opt/omega-update-server
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# 日志设置
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omega-update-server
+
+[Install]
+WantedBy=multi-user.target
