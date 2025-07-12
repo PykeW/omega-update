@@ -248,3 +248,86 @@ class ServerConfig(Base):
 
     def __repr__(self):
         return f"<ServerConfig(key='{self.key}', value='{self.value}')>"
+
+# 数据库连接和会话管理
+class DatabaseManager:
+    """数据库管理器"""
+
+    def __init__(self, database_url: str = None):
+        if database_url is None:
+            database_url = DATABASE_URL
+
+        self.engine = create_engine(database_url, echo=False)
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+
+    def create_tables(self):
+        """创建所有表"""
+        Base.metadata.create_all(bind=self.engine)
+
+    def get_session(self):
+        """获取数据库会话"""
+        return self.SessionLocal()
+
+    def close(self):
+        """关闭数据库连接"""
+        self.engine.dispose()
+
+# 全局数据库管理器实例
+db_manager = DatabaseManager(DATABASE_URL)
+
+def get_db():
+    """获取数据库会话的依赖注入函数"""
+    db = db_manager.get_session()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def init_database():
+    """初始化数据库"""
+    db_manager.create_tables()
+
+    # 创建默认配置
+    db = db_manager.get_session()
+    try:
+        # 检查是否已有配置
+        existing_config = db.query(ServerConfig).first()
+        if not existing_config:
+            default_configs = [
+                ServerConfig(key="server_name", value="Omega Update Server",
+                           description="服务器名称"),
+                ServerConfig(key="max_total_storage", value="32212254720",
+                           description="最大总存储空间（30GB）"),
+                ServerConfig(key="max_full_packages", value="3",
+                           description="最大完整包数量"),
+                ServerConfig(key="max_patch_packages", value="10",
+                           description="最大增量包数量"),
+                ServerConfig(key="max_hotfix_packages", value="20",
+                           description="最大热修复包数量"),
+                ServerConfig(key="cleanup_threshold", value="0.85",
+                           description="自动清理阈值"),
+                ServerConfig(key="warning_threshold", value="0.80",
+                           description="存储警告阈值"),
+                ServerConfig(key="critical_threshold", value="0.90",
+                           description="存储严重阈值"),
+                ServerConfig(key="enable_auto_cleanup", value="true",
+                           description="是否启用自动清理"),
+                ServerConfig(key="current_stable_version", value="2.2.5",
+                           description="当前稳定版本"),
+            ]
+
+            for config in default_configs:
+                db.add(config)
+
+            db.commit()
+            print("默认配置已创建")
+    except Exception as e:
+        print(f"初始化数据库配置失败: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    # 初始化数据库
+    init_database()
+    print("增强版数据库初始化完成")
