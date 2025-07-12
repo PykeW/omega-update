@@ -96,25 +96,34 @@ fix_nginx_config() {
 
 fix_python_environment() {
     log_info "修复Python环境..."
-    
+
     local venv_dir="/opt/omega-update-server/venv"
-    
+
+    # 确保目录存在
+    mkdir -p /opt/omega-update-server
+    chown omega:omega /opt/omega-update-server
+
     # 检查虚拟环境
     if [ ! -d "$venv_dir" ]; then
         log_info "重新创建Python虚拟环境..."
         cd /opt/omega-update-server
         sudo -u omega python3 -m venv venv
     fi
-    
-    # 重新安装依赖
+
+    # 重新安装依赖（使用国内镜像）
     log_info "重新安装Python依赖..."
     sudo -u omega bash -c "
         cd /opt/omega-update-server
         source venv/bin/activate
-        pip install --upgrade pip
-        pip install fastapi uvicorn sqlalchemy python-multipart aiofiles
+        pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install fastapi -i https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install uvicorn -i https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install sqlalchemy -i https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install python-multipart -i https://pypi.tuna.tsinghua.edu.cn/simple
+        pip install aiofiles -i https://pypi.tuna.tsinghua.edu.cn/simple
+        pip list | grep -E '(fastapi|uvicorn|sqlalchemy|multipart|aiofiles)'
     "
-    
+
     log_info "Python环境修复完成"
 }
 

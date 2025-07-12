@@ -1,0 +1,86 @@
+================================================================================
+OMEGA软件版本差异分析报告
+================================================================================
+生成时间: 2025-07-11 14:17:37
+
+总体统计:
+  旧版本文件数: 12,984
+  新版本文件数: 13,342
+  旧版本总大小: 12.3 GB
+  新版本总大小: 12.3 GB
+  大小变化: -8315420.0 B
+
+变更统计:
+  新增文件: 496 个 (56.7 MB)
+  删除文件: 138 个 (67.4 MB)
+  修改文件: 305 个
+  未变更文件: 12,541 个
+
+新增文件列表:
+  + _internal\albucore-0.0.23.dist-info\INSTALLER (4.0 B)
+  + _internal\albucore-0.0.23.dist-info\LICENSE (1.0 KB)
+  + _internal\albucore-0.0.23.dist-info\METADATA (5.2 KB)
+  + _internal\albucore-0.0.23.dist-info\RECORD (1.1 KB)
+  + _internal\albucore-0.0.23.dist-info\REQUESTED (0.0 B)
+  + _internal\albucore-0.0.23.dist-info\WHEEL (91.0 B)
+  + _internal\albucore-0.0.23.dist-info\top_level.txt (9.0 B)
+  + _internal\albumentations-1.4.24.dist-info\INSTALLER (4.0 B)
+  + _internal\albumentations-1.4.24.dist-info\LICENSE (1.1 KB)
+  + _internal\albumentations-1.4.24.dist-info\METADATA (37.0 KB)
+  + _internal\albumentations-1.4.24.dist-info\RECORD (9.6 KB)
+  + _internal\albumentations-1.4.24.dist-info\REQUESTED (0.0 B)
+  + _internal\albumentations-1.4.24.dist-info\WHEEL (91.0 B)
+  + _internal\albumentations-1.4.24.dist-info\top_level.txt (15.0 B)
+  + _internal\app\torch_src\yolo_base_models\yolo11n.pt (5.4 MB)
+  + _internal\app\torch_src\yolo_base_models\yolov8n.pt (6.2 MB)
+  + _internal\lap\_lapjv.cp310-win_amd64.pyd (97.5 KB)
+  + _internal\numpy\.libs\libopenblas64__v0.3.23-246-g3d31191b-gcc_10_3_0.dll (36.4 MB)
+  + _internal\regex\_regex.cp310-win_amd64.pyd (704.5 KB)
+  + _internal\simsimd.cp310-win_amd64.pyd (177.5 KB)
+  ... 还有 476 个文件
+
+删除文件列表:
+  - _internal\cv2\opencv_videoio_ffmpeg460_64.dll (19.9 MB)
+  - _internal\mypy\__init__.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\applytype.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\argmap.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\binder.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\checker.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\checkexpr.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\checkmember.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\checkpattern.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\checkstrformat.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\constant_fold.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\constraints.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\copytype.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\defaults.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\erasetype.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\error_formatter.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\errorcodes.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\errors.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\expandtype.cp310-win_amd64.pyd (10.5 KB)
+  - _internal\mypy\exprtotype.cp310-win_amd64.pyd (10.5 KB)
+  ... 还有 118 个文件
+
+修改文件列表:
+  * _internal\base_library.zip (859.9 KB → 859.9 KB)
+  * _internal\cv2\cv2.pyd (71.5 MB → 71.2 MB) -240128.0 B
+  * _internal\cv2\typing\__init__.py (5.4 KB → 5.4 KB)
+  * _internal\cv2\version.py (97.0 B → 96.0 B) -1.0 B
+  * _internal\frozenlist\_frozenlist.cp310-win_amd64.pyd (76.0 KB → 66.5 KB) -9728.0 B
+  * _internal\google\_upb\_message.pyd (707.7 KB → 707.7 KB)
+  * _internal\multidict\_multidict.cp310-win_amd64.pyd (65.0 KB → 77.0 KB) +12.0 KB
+  * _internal\numpy\core\_multiarray_tests.cp310-win_amd64.pyd (64.0 KB → 64.5 KB) +512.0 B
+  * _internal\numpy\core\_multiarray_umath.cp310-win_amd64.pyd (2.6 MB → 2.7 MB) +172.0 KB
+  * _internal\numpy\fft\_pocketfft_internal.cp310-win_amd64.pyd (108.0 KB → 109.0 KB) +1.0 KB
+  * _internal\numpy\linalg\_umath_linalg.cp310-win_amd64.pyd (100.0 KB → 105.0 KB) +5.0 KB
+  * _internal\numpy\linalg\lapack_lite.cp310-win_amd64.pyd (17.0 KB → 17.5 KB) +512.0 B
+  * _internal\numpy\random\_bounded_integers.cp310-win_amd64.pyd (208.0 KB → 236.0 KB) +28.0 KB
+  * _internal\numpy\random\_common.cp310-win_amd64.pyd (157.5 KB → 163.5 KB) +6.0 KB
+  * _internal\numpy\random\_generator.cp310-win_amd64.pyd (620.5 KB → 638.0 KB) +17.5 KB
+  * _internal\numpy\random\_mt19937.cp310-win_amd64.pyd (65.5 KB → 66.0 KB) +512.0 B
+  * _internal\numpy\random\_pcg64.cp310-win_amd64.pyd (69.0 KB → 70.0 KB) +1.0 KB
+  * _internal\numpy\random\_philox.cp310-win_amd64.pyd (57.0 KB → 58.0 KB) +1.0 KB
+  * _internal\numpy\random\_sfc64.cp310-win_amd64.pyd (41.0 KB → 41.0 KB)
+  * _internal\numpy\random\bit_generator.cp310-win_amd64.pyd (132.5 KB → 139.0 KB) +6.5 KB
+  ... 还有 285 个文件

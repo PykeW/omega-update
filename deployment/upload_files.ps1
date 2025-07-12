@@ -41,22 +41,35 @@ function Show-Banner {
 
 function Test-SSHConnection {
     Write-Step "检查SSH连接..."
-    
+
     try {
+        # 首先尝试密钥认证
+        Write-Info "尝试SSH密钥认证..."
         $result = ssh -o ConnectTimeout=10 -o BatchMode=yes "$ServerUser@$ServerIP" "exit" 2>$null
         if ($LASTEXITCODE -eq 0) {
-            Write-Info "SSH连接正常"
+            Write-Info "SSH密钥认证成功"
+            return $true
+        }
+
+        # 如果密钥认证失败，提示用户手动测试
+        Write-Warn "SSH密钥认证失败，请手动测试连接"
+        Write-Host "请在新的PowerShell窗口中执行以下命令测试连接："
+        Write-Host "ssh -o PreferredAuthentications=password root@$ServerIP" -ForegroundColor Yellow
+        Write-Host ""
+
+        $userChoice = Read-Host "连接测试成功后，输入 'y' 继续，或 'n' 退出"
+        if ($userChoice -eq 'y' -or $userChoice -eq 'Y') {
+            Write-Info "用户确认SSH连接正常，继续执行"
             return $true
         } else {
-            Write-Error "无法连接到服务器 $ServerIP"
-            Write-Error "请确保："
-            Write-Host "  1. 服务器IP地址正确"
-            Write-Host "  2. SSH密钥已配置或密码认证可用"
-            Write-Host "  3. 服务器允许SSH连接"
+            Write-Error "用户取消操作"
             return $false
         }
+
     } catch {
         Write-Error "SSH连接测试失败: $($_.Exception.Message)"
+        Write-Host "请手动测试SSH连接："
+        Write-Host "ssh root@$ServerIP" -ForegroundColor Yellow
         return $false
     }
 }
@@ -87,46 +100,46 @@ function Test-RequiredFiles {
 
 function Upload-DeploymentFiles {
     Write-Step "上传部署文件到服务器..."
-    
+
     try {
-        # 创建远程目录
+        # 创建远程目录（使用密码认证）
         Write-Info "创建远程目录..."
-        ssh "$ServerUser@$ServerIP" "rm -rf /tmp/omega-deployment && mkdir -p /tmp/omega-deployment"
+        ssh -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" "$ServerUser@$ServerIP" "rm -rf /tmp/omega-deployment && mkdir -p /tmp/omega-deployment"
         
-        # 上传deployment目录下的所有文件
+        # 上传deployment目录下的所有文件（使用密码认证）
         Write-Info "上传部署配置文件..."
-        scp deployment\*.py "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
-        scp deployment\*.sh "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
-        scp deployment\*.conf "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
-        scp deployment\*.service "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
-        scp deployment\*.md "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+        scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" deployment\*.py "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+        scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" deployment\*.sh "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+        scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" deployment\*.conf "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+        scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" deployment\*.service "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+        scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" deployment\*.md "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
         
         # 上传update_server目录
         if (Test-Path "update_server") {
             Write-Info "上传update_server模块..."
-            scp -r update_server "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+            scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" -r update_server "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
         }
-        
+
         # 上传其他项目文件
         $projectFiles = @(
             "generate_update_package.py",
-            "simple_update_generator.py", 
+            "simple_update_generator.py",
             "version_analyzer.py",
             "PROJECT_STRUCTURE.md"
         )
-        
+
         foreach ($file in $projectFiles) {
             if (Test-Path $file) {
                 Write-Info "上传: $file"
-                scp $file "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
+                scp -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" $file "$ServerUser@${ServerIP}:/tmp/omega-deployment/"
             } else {
                 Write-Warn "文件不存在，跳过: $file"
             }
         }
-        
+
         # 设置文件权限
         Write-Info "设置文件权限..."
-        ssh "$ServerUser@$ServerIP" "chmod +x /tmp/omega-deployment/*.sh"
+        ssh -o "PreferredAuthentications=password" -o "PubkeyAuthentication=no" "$ServerUser@$ServerIP" "chmod +x /tmp/omega-deployment/*.sh"
         
         Write-Info "文件上传完成"
         return $true

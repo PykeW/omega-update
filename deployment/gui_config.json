@@ -1,0 +1,13 @@
+{
+  "server_url": "http://update.chpyke.cn",
+  "api_key": "dac450db3ec47d79196edb7a34defaed",
+  "old_version_path": "",
+  "new_version_path": "",
+  "output_path": "updates",
+  "package_prefix": "omega",
+  "package_type": "both",
+  "auto_upload": true,
+  "high_compression": true,
+  "analyze_differences": true,
+  "stream_upload": true
+}
