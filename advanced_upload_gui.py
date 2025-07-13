@@ -232,10 +232,11 @@ class AdvancedUploadGUI:
         buttons_frame.grid(row=row, column=0, columnspan=3, pady=(0, 10))
         
         ttk.Button(buttons_frame, text="上传", command=self.upload_package).grid(row=0, column=0, padx=(0, 10))
-        ttk.Button(buttons_frame, text="清理存储", command=self.cleanup_storage).grid(row=0, column=1, padx=(0, 10))
-        ttk.Button(buttons_frame, text="查看包列表", command=self.view_packages).grid(row=0, column=2, padx=(0, 10))
-        ttk.Button(buttons_frame, text="存储管理", command=self.show_storage_management).grid(row=0, column=3, padx=(0, 10))
-        ttk.Button(buttons_frame, text="退出", command=self.root.quit).grid(row=0, column=4)
+        ttk.Button(buttons_frame, text="检查更新", command=self.show_update_checker).grid(row=0, column=1, padx=(0, 10))
+        ttk.Button(buttons_frame, text="清理存储", command=self.cleanup_storage).grid(row=0, column=2, padx=(0, 10))
+        ttk.Button(buttons_frame, text="查看包列表", command=self.view_packages).grid(row=0, column=3, padx=(0, 10))
+        ttk.Button(buttons_frame, text="存储管理", command=self.show_storage_management).grid(row=0, column=4, padx=(0, 10))
+        ttk.Button(buttons_frame, text="退出", command=self.root.quit).grid(row=0, column=5)
         
     def setup_progress_frame(self, parent, row):
         """设置进度和日志框架"""
@@ -1214,6 +1215,437 @@ class AdvancedUploadGUI:
                 self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
 
         threading.Thread(target=verify_thread, daemon=True).start()
+
+    def show_update_checker(self):
+        """显示更新检查器窗口"""
+        update_window = tk.Toplevel(self.root)
+        update_window.title("检查更新")
+        update_window.geometry("900x700")
+        update_window.transient(self.root)
+        update_window.grab_set()
+
+        # 创建笔记本控件
+        notebook = ttk.Notebook(update_window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 检查更新标签页
+        check_frame = ttk.Frame(notebook)
+        notebook.add(check_frame, text="检查更新")
+        self.setup_update_check_tab(check_frame)
+
+        # 下载管理标签页
+        download_frame = ttk.Frame(notebook)
+        notebook.add(download_frame, text="下载管理")
+        self.setup_download_management_tab(download_frame)
+
+    def setup_update_check_tab(self, parent):
+        """设置检查更新标签页"""
+        # 本地文件夹选择
+        folder_frame = ttk.LabelFrame(parent, text="本地文件夹", padding="10")
+        folder_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        self.local_folder_var = tk.StringVar()
+        ttk.Entry(folder_frame, textvariable=self.local_folder_var, width=60).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(folder_frame, text="选择文件夹", command=self.select_local_folder).pack(side=tk.LEFT)
+
+        # 目标版本设置
+        version_frame = ttk.LabelFrame(parent, text="目标版本", padding="10")
+        version_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Label(version_frame, text="版本号:").grid(row=0, column=0, sticky=tk.W)
+        self.target_version_var = tk.StringVar()
+        ttk.Entry(version_frame, textvariable=self.target_version_var, width=20).grid(row=0, column=1, padx=(10, 20))
+
+        ttk.Label(version_frame, text="平台:").grid(row=0, column=2, sticky=tk.W)
+        self.update_platform_var = tk.StringVar(value="windows")
+        platform_combo = ttk.Combobox(version_frame, textvariable=self.update_platform_var,
+                                     values=["windows", "linux", "macos"], width=15)
+        platform_combo.grid(row=0, column=3, padx=(10, 20))
+
+        ttk.Label(version_frame, text="架构:").grid(row=0, column=4, sticky=tk.W)
+        self.update_arch_var = tk.StringVar(value="x64")
+        arch_combo = ttk.Combobox(version_frame, textvariable=self.update_arch_var,
+                                 values=["x64", "x86", "arm64"], width=15)
+        arch_combo.grid(row=0, column=5, padx=(10, 0))
+
+        # 操作按钮
+        action_frame = ttk.Frame(parent)
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(action_frame, text="扫描本地文件", command=self.scan_local_files).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(action_frame, text="检查更新", command=self.check_for_updates).pack(side=tk.LEFT, padx=(0, 10))
+
+        # 结果显示区域
+        result_frame = ttk.LabelFrame(parent, text="检查结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # 创建树形视图显示文件差异
+        columns = ("文件路径", "状态", "大小", "本地哈希", "远程哈希")
+        self.update_tree = ttk.Treeview(result_frame, columns=columns, show="tree headings", height=15)
+
+        # 设置列标题
+        for col in columns:
+            self.update_tree.heading(col, text=col)
+            self.update_tree.column(col, width=150)
+
+        # 添加滚动条
+        update_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL, command=self.update_tree.yview)
+        self.update_tree.configure(yscrollcommand=update_scrollbar.set)
+
+        self.update_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        update_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # 摘要信息
+        summary_frame = ttk.Frame(parent)
+        summary_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        self.update_summary_label = ttk.Label(summary_frame, text="", foreground="blue")
+        self.update_summary_label.pack()
+
+        # 下载按钮
+        download_frame = ttk.Frame(parent)
+        download_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(download_frame, text="下载选中文件", command=self.start_selective_download).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(download_frame, text="下载全部更新", command=self.start_full_download).pack(side=tk.LEFT)
+
+    def setup_download_management_tab(self, parent):
+        """设置下载管理标签页"""
+        # 下载进度显示
+        progress_frame = ttk.LabelFrame(parent, text="下载进度", padding="10")
+        progress_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        # 当前文件
+        self.current_download_label = ttk.Label(progress_frame, text="当前文件: 无")
+        self.current_download_label.pack(anchor=tk.W)
+
+        # 当前文件进度
+        self.current_file_progress = ttk.Progressbar(progress_frame, mode='determinate')
+        self.current_file_progress.pack(fill=tk.X, pady=(5, 0))
+
+        # 总体进度
+        self.overall_progress_label = ttk.Label(progress_frame, text="总体进度: 0%")
+        self.overall_progress_label.pack(anchor=tk.W, pady=(10, 0))
+
+        self.overall_progress = ttk.Progressbar(progress_frame, mode='determinate')
+        self.overall_progress.pack(fill=tk.X, pady=(5, 0))
+
+        # 统计信息
+        stats_frame = ttk.Frame(progress_frame)
+        stats_frame.pack(fill=tk.X, pady=(10, 0))
+
+        self.download_stats_label = ttk.Label(stats_frame, text="")
+        self.download_stats_label.pack(anchor=tk.W)
+
+        # 控制按钮
+        control_frame = ttk.Frame(parent)
+        control_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.pause_button = ttk.Button(control_frame, text="暂停", command=self.pause_download)
+        self.pause_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.resume_button = ttk.Button(control_frame, text="继续", command=self.resume_download, state=tk.DISABLED)
+        self.resume_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.cancel_button = ttk.Button(control_frame, text="取消", command=self.cancel_download)
+        self.cancel_button.pack(side=tk.LEFT)
+
+        # 下载日志
+        log_frame = ttk.LabelFrame(parent, text="下载日志", padding="10")
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        self.download_log = tk.Text(log_frame, height=15, wrap=tk.WORD)
+        download_log_scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.download_log.yview)
+        self.download_log.configure(yscrollcommand=download_log_scrollbar.set)
+
+        self.download_log.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        download_log_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # 初始化下载相关变量
+        self.local_files = {}
+        self.update_plan = None
+        self.download_manager = None
+
+    def select_local_folder(self):
+        """选择本地文件夹"""
+        folder = filedialog.askdirectory(title="选择本地文件夹")
+        if folder:
+            self.local_folder_var.set(folder)
+            self.log_download_message(f"选择本地文件夹: {folder}")
+
+    def scan_local_files(self):
+        """扫描本地文件"""
+        local_folder = self.local_folder_var.get()
+        if not local_folder:
+            messagebox.showerror("错误", "请先选择本地文件夹")
+            return
+
+        if not os.path.exists(local_folder):
+            messagebox.showerror("错误", "本地文件夹不存在")
+            return
+
+        self.log_download_message("开始扫描本地文件...")
+
+        # 在新线程中扫描文件
+        def scan_thread():
+            try:
+                from local_file_scanner import LocalFileScanner
+
+                def progress_callback(current, total, current_file):
+                    self.root.after(0, lambda: self.log_download_message(
+                        f"扫描进度: {current}/{total} - {current_file}"))
+
+                scanner = LocalFileScanner(progress_callback)
+                self.local_files = scanner.scan_directory(local_folder)
+
+                self.root.after(0, lambda: self.log_download_message(
+                    f"扫描完成，共找到 {len(self.local_files)} 个文件"))
+
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror("错误", f"扫描本地文件失败: {e}"))
+
+        threading.Thread(target=scan_thread, daemon=True).start()
+
+    def check_for_updates(self):
+        """检查更新"""
+        if not self.local_files:
+            messagebox.showerror("错误", "请先扫描本地文件")
+            return
+
+        target_version = self.target_version_var.get().strip()
+        if not target_version:
+            messagebox.showerror("错误", "请输入目标版本号")
+            return
+
+        platform = self.update_platform_var.get()
+        arch = self.update_arch_var.get()
+
+        self.log_download_message(f"检查版本 {target_version} 的更新...")
+
+        # 在新线程中检查更新
+        def check_thread():
+            try:
+                from difference_detector import DifferenceDetector
+
+                server_url = f"http://{self.config['server']['ip']}:{self.config['server']['port']}"
+                api_key = self.config['api']['key']
+
+                detector = DifferenceDetector(server_url, api_key)
+                self.update_plan = detector.detect_differences(
+                    self.local_files, target_version, platform, arch
+                )
+
+                # 在主线程中更新UI
+                self.root.after(0, self.display_update_results)
+
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror("错误", f"检查更新失败: {e}"))
+
+        threading.Thread(target=check_thread, daemon=True).start()
+
+    def display_update_results(self):
+        """显示更新检查结果"""
+        if not self.update_plan:
+            return
+
+        # 清空树形视图
+        for item in self.update_tree.get_children():
+            self.update_tree.delete(item)
+
+        # 添加需要下载的文件
+        download_node = self.update_tree.insert("", tk.END, text="需要下载", open=True)
+        for file_change in self.update_plan.files_to_download:
+            local_hash = file_change.local_info.sha256_hash if file_change.local_info else "无"
+            self.update_tree.insert(download_node, tk.END,
+                                  text=file_change.relative_path,
+                                  values=(file_change.relative_path,
+                                         file_change.change_type.value,
+                                         self.format_file_size(file_change.file_size),
+                                         local_hash[:16] + "..." if local_hash != "无" else "无",
+                                         file_change.sha256_hash[:16] + "..."))
+
+        # 添加相同的文件
+        if self.update_plan.files_same:
+            same_node = self.update_tree.insert("", tk.END, text="相同文件", open=False)
+            for file_change in self.update_plan.files_same:
+                self.update_tree.insert(same_node, tk.END,
+                                      text=file_change.relative_path,
+                                      values=(file_change.relative_path,
+                                             "相同",
+                                             self.format_file_size(file_change.file_size),
+                                             file_change.sha256_hash[:16] + "...",
+                                             file_change.sha256_hash[:16] + "..."))
+
+        # 添加需要删除的文件
+        if self.update_plan.files_to_delete:
+            delete_node = self.update_tree.insert("", tk.END, text="需要删除", open=False)
+            for file_change in self.update_plan.files_to_delete:
+                self.update_tree.insert(delete_node, tk.END,
+                                      text=file_change.relative_path,
+                                      values=(file_change.relative_path,
+                                             "删除",
+                                             self.format_file_size(file_change.file_size),
+                                             file_change.sha256_hash[:16] + "...",
+                                             "无"))
+
+        # 更新摘要信息
+        summary = self.update_plan.get_summary()
+        summary_text = (f"目标版本: {summary['target_version']} | "
+                       f"需要下载: {summary['files_to_download']} 个文件 "
+                       f"({summary['download_size_mb']} MB) | "
+                       f"相同文件: {summary['files_same']} 个 | "
+                       f"需要删除: {summary['files_to_delete']} 个")
+
+        self.update_summary_label.config(text=summary_text)
+        self.log_download_message(f"更新检查完成: {summary_text}")
+
+    def start_selective_download(self):
+        """开始选择性下载"""
+        if not self.update_plan:
+            messagebox.showerror("错误", "请先检查更新")
+            return
+
+        # 获取选中的文件
+        selected_items = self.update_tree.selection()
+        if not selected_items:
+            messagebox.showerror("错误", "请选择要下载的文件")
+            return
+
+        selected_files = []
+        for item in selected_items:
+            item_text = self.update_tree.item(item, "text")
+            # 只添加文件项，不添加分组项
+            if item_text and not item_text.startswith(("需要下载", "相同文件", "需要删除")):
+                selected_files.append(item_text)
+
+        if not selected_files:
+            messagebox.showerror("错误", "请选择具体的文件")
+            return
+
+        self.start_download(selected_files)
+
+    def start_full_download(self):
+        """开始完整下载"""
+        if not self.update_plan:
+            messagebox.showerror("错误", "请先检查更新")
+            return
+
+        if not self.update_plan.files_to_download:
+            messagebox.showinfo("信息", "没有需要下载的文件")
+            return
+
+        self.start_download()
+
+    def start_download(self, selected_files=None):
+        """开始下载"""
+        local_folder = self.local_folder_var.get()
+        if not local_folder:
+            messagebox.showerror("错误", "请选择本地文件夹")
+            return
+
+        try:
+            from download_manager import DownloadManager
+
+            server_url = f"http://{self.config['server']['ip']}:{self.config['server']['port']}"
+            api_key = self.config['api']['key']
+
+            self.download_manager = DownloadManager(server_url, api_key, self.download_progress_callback)
+
+            success = self.download_manager.start_download(self.update_plan, local_folder, selected_files)
+
+            if success:
+                self.log_download_message("开始下载...")
+                # 切换到下载管理标签页
+                # 这里需要获取notebook的引用，暂时跳过
+            else:
+                messagebox.showerror("错误", "无法开始下载，可能已有下载任务在进行")
+
+        except Exception as e:
+            messagebox.showerror("错误", f"启动下载失败: {e}")
+
+    def download_progress_callback(self, progress):
+        """下载进度回调"""
+        # 在主线程中更新UI
+        self.root.after(0, lambda: self.update_download_progress(progress))
+
+    def update_download_progress(self, progress):
+        """更新下载进度显示"""
+        from download_manager import DownloadStatus
+
+        # 更新当前文件
+        self.current_download_label.config(text=f"当前文件: {progress.current_file}")
+
+        # 更新当前文件进度
+        self.current_file_progress['value'] = progress.current_file_progress * 100
+
+        # 更新总体进度
+        self.overall_progress_label.config(text=f"总体进度: {progress.overall_progress:.1%}")
+        self.overall_progress['value'] = progress.overall_progress * 100
+
+        # 更新统计信息
+        speed_mb = progress.download_speed / 1024 / 1024
+        eta_min = progress.eta_seconds // 60
+        eta_sec = progress.eta_seconds % 60
+
+        stats_text = (f"已完成: {progress.files_completed}/{progress.files_total} 个文件 | "
+                     f"失败: {progress.files_failed} | 跳过: {progress.files_skipped} | "
+                     f"速度: {speed_mb:.2f} MB/s | 剩余时间: {eta_min:02d}:{eta_sec:02d}")
+
+        self.download_stats_label.config(text=stats_text)
+
+        # 更新按钮状态
+        if progress.status == DownloadStatus.DOWNLOADING:
+            self.pause_button.config(state=tk.NORMAL)
+            self.resume_button.config(state=tk.DISABLED)
+        elif progress.status == DownloadStatus.PENDING:
+            self.pause_button.config(state=tk.DISABLED)
+            self.resume_button.config(state=tk.NORMAL)
+        elif progress.status in [DownloadStatus.COMPLETED, DownloadStatus.CANCELLED]:
+            self.pause_button.config(state=tk.DISABLED)
+            self.resume_button.config(state=tk.DISABLED)
+            self.cancel_button.config(state=tk.DISABLED)
+
+        # 记录日志
+        if progress.current_file:
+            self.log_download_message(f"下载: {progress.current_file} - {progress.current_file_progress:.1%}")
+
+    def pause_download(self):
+        """暂停下载"""
+        if self.download_manager:
+            self.download_manager.pause_download()
+            self.log_download_message("下载已暂停")
+
+    def resume_download(self):
+        """恢复下载"""
+        if self.download_manager:
+            self.download_manager.resume_download()
+            self.log_download_message("下载已恢复")
+
+    def cancel_download(self):
+        """取消下载"""
+        if self.download_manager:
+            self.download_manager.cancel_download()
+            self.log_download_message("下载已取消")
+
+    def log_download_message(self, message):
+        """记录下载日志"""
+        if hasattr(self, 'download_log'):
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            self.download_log.insert(tk.END, f"[{timestamp}] {message}\n")
+            self.download_log.see(tk.END)
+
+    def format_file_size(self, size_bytes):
+        """格式化文件大小"""
+        if size_bytes == 0:
+            return "0 B"
+
+        size_names = ["B", "KB", "MB", "GB", "TB"]
+        i = 0
+        while size_bytes >= 1024 and i < len(size_names) - 1:
+            size_bytes /= 1024.0
+            i += 1
+
+        return f"{size_bytes:.1f} {size_names[i]}"
 
 def main():
     """主函数"""

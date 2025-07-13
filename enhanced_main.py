@@ -715,6 +715,172 @@ async def list_version_files(
         logger.error(f"获取文件列表失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
 
+@app.get("/api/v1/download/file")
+async def download_file(
+    version: str = Query(...),
+    platform: str = Query("windows"),
+    arch: str = Query("x64"),
+    relative_path: str = Query(...),
+    api_key: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """下载指定文件"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        # 查找版本记录
+        version_record = db.query(Version).filter(
+            Version.version == version,
+            Version.platform == platform,
+            Version.architecture == arch
+        ).first()
+
+        if not version_record:
+            raise HTTPException(status_code=404, detail="版本不存在")
+
+        # 查找文件记录
+        file_record = db.query(SingleFile).filter(
+            SingleFile.version_id == version_record.id,
+            SingleFile.relative_path == relative_path
+        ).first()
+
+        if not file_record:
+            raise HTTPException(status_code=404, detail="文件不存在")
+
+        # 构建文件路径
+        file_path = Path(config.UPLOAD_DIR) / platform / arch / version / relative_path
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="文件不存在于服务器")
+
+        # 返回文件流
+        return FileResponse(
+            path=str(file_path),
+            filename=file_record.file_name,
+            media_type='application/octet-stream'
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"文件下载失败: {e}")
+        raise HTTPException(status_code=500, detail=f"文件下载失败: {str(e)}")
+
+@app.post("/api/v1/version/compare")
+async def compare_versions(
+    target_version: str = Form(...),
+    platform: str = Form("windows"),
+    arch: str = Form("x64"),
+    local_files: str = Form(...),  # JSON string of local file info
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """比较本地文件与目标版本的差异"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        import json
+
+        # 解析本地文件信息
+        try:
+            local_file_data = json.loads(local_files)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="本地文件信息格式错误")
+
+        # 查找目标版本记录
+        version_record = db.query(Version).filter(
+            Version.version == target_version,
+            Version.platform == platform,
+            Version.architecture == arch
+        ).first()
+
+        if not version_record:
+            raise HTTPException(status_code=404, detail="目标版本不存在")
+
+        # 获取远程文件列表
+        remote_files = db.query(SingleFile).filter(
+            SingleFile.version_id == version_record.id
+        ).all()
+
+        # 构建远程文件映射
+        remote_file_map = {}
+        for file_record in remote_files:
+            remote_file_map[file_record.relative_path] = {
+                "relative_path": file_record.relative_path,
+                "file_name": file_record.file_name,
+                "file_size": file_record.file_size,
+                "sha256": file_record.sha256_hash,
+                "created_at": file_record.created_at.isoformat() if file_record.created_at else None
+            }
+
+        # 构建本地文件映射
+        local_file_map = {}
+        for file_info in local_file_data:
+            local_file_map[file_info["relative_path"]] = file_info
+
+        # 分析差异
+        files_to_download = []  # 需要下载的文件
+        files_to_delete = []    # 需要删除的文件（可选）
+        files_same = []         # 相同的文件
+
+        total_download_size = 0
+
+        # 检查远程文件
+        for path, remote_info in remote_file_map.items():
+            if path not in local_file_map:
+                # 新文件
+                files_to_download.append({
+                    **remote_info,
+                    "change_type": "new"
+                })
+                total_download_size += remote_info["file_size"]
+            elif local_file_map[path].get("sha256") != remote_info["sha256"]:
+                # 更新文件
+                files_to_download.append({
+                    **remote_info,
+                    "change_type": "updated"
+                })
+                total_download_size += remote_info["file_size"]
+            else:
+                # 相同文件
+                files_same.append({
+                    **remote_info,
+                    "change_type": "same"
+                })
+
+        # 检查本地独有文件（可能需要删除）
+        for path, local_info in local_file_map.items():
+            if path not in remote_file_map:
+                files_to_delete.append({
+                    "relative_path": path,
+                    "change_type": "deleted"
+                })
+
+        return {
+            "target_version": target_version,
+            "platform": platform,
+            "architecture": arch,
+            "summary": {
+                "files_to_download": len(files_to_download),
+                "files_to_delete": len(files_to_delete),
+                "files_same": len(files_same),
+                "total_download_size": total_download_size
+            },
+            "changes": {
+                "download": files_to_download,
+                "delete": files_to_delete,
+                "same": files_same
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"版本比较失败: {e}")
+        raise HTTPException(status_code=500, detail=f"版本比较失败: {str(e)}")
+
 if __name__ == "__main__":
     uvicorn.run(
         "enhanced_main:app",
