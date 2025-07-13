@@ -24,7 +24,7 @@ class ServerConfig:
     
     # 安全配置
     SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this")
-    API_KEY = os.getenv("API_KEY", "your-api-key-change-this")
+    API_KEY = os.getenv("API_KEY", "dac450db3ec47d79196edb7a34defaed")
     
     # 更新包配置
     MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "104857600"))  # 100MB

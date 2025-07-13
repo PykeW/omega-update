@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class StorageManager:
     """存储空间管理器"""
     
-    def __init__(self, base_path: str = "/var/www/updates"):
+    def __init__(self, base_path: str = "/var/www/omega-updates/uploads"):
         self.base_path = Path(base_path)
         self.full_path = self.base_path / "full"
         self.patch_path = self.base_path / "patches"
@@ -79,10 +79,10 @@ class StorageManager:
         """检查存储健康状况"""
         stats = self.get_storage_stats()
         
-        # 获取配置阈值
-        warning_threshold = float(self._get_config(db, "warning_threshold", "0.80"))
-        critical_threshold = float(self._get_config(db, "critical_threshold", "0.90"))
-        cleanup_threshold = float(self._get_config(db, "cleanup_threshold", "0.85"))
+        # 获取配置阈值 (优化版 - 更积极的清理策略)
+        warning_threshold = float(self._get_config(db, "warning_threshold", "0.70"))
+        critical_threshold = float(self._get_config(db, "critical_threshold", "0.85"))
+        cleanup_threshold = float(self._get_config(db, "cleanup_threshold", "0.75"))
         
         usage_percentage = stats.get("usage_percentage", 0) / 100
         
@@ -115,7 +115,7 @@ class StorageManager:
     def should_cleanup(self, db: Session) -> bool:
         """检查是否需要执行清理"""
         stats = self.get_storage_stats()
-        cleanup_threshold = float(self._get_config(db, "cleanup_threshold", "0.85"))
+        cleanup_threshold = float(self._get_config(db, "cleanup_threshold", "0.75"))
         usage_percentage = stats.get("usage_percentage", 0) / 100
         
         return usage_percentage >= cleanup_threshold

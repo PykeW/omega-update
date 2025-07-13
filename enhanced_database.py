@@ -253,7 +253,7 @@ class ServerConfig(Base):
 class DatabaseManager:
     """数据库管理器"""
 
-    def __init__(self, database_url: str = None):
+    def __init__(self, database_url: str | None = None):
         if database_url is None:
             database_url = DATABASE_URL
 
@@ -304,11 +304,11 @@ def init_database():
                            description="最大增量包数量"),
                 ServerConfig(key="max_hotfix_packages", value="20",
                            description="最大热修复包数量"),
-                ServerConfig(key="cleanup_threshold", value="0.85",
+                ServerConfig(key="cleanup_threshold", value="0.75",
                            description="自动清理阈值"),
-                ServerConfig(key="warning_threshold", value="0.80",
+                ServerConfig(key="warning_threshold", value="0.70",
                            description="存储警告阈值"),
-                ServerConfig(key="critical_threshold", value="0.90",
+                ServerConfig(key="critical_threshold", value="0.85",
                            description="存储严重阈值"),
                 ServerConfig(key="enable_auto_cleanup", value="true",
                            description="是否启用自动清理"),

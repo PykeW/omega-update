@@ -106,9 +106,12 @@ async def upload_package(
     db: Session = Depends(get_db)
 ):
     """上传更新包（支持完整包、增量包、热修复包）"""
-    
+
+    logger.info(f"收到上传请求: version={version}, type={package_type}, platform={platform}, arch={arch}")
+
     # 验证API密钥
     if api_key != config.API_KEY:
+        logger.warning(f"API密钥验证失败: 收到={api_key}, 期望={config.API_KEY}")
         raise HTTPException(status_code=401, detail="无效的API密钥")
 
     try:
@@ -131,7 +134,7 @@ async def upload_package(
                 raise HTTPException(status_code=507, detail="存储空间不足，清理失败")
 
         # 检查文件扩展名
-        file_ext = Path(file.filename).suffix.lower()
+        file_ext = Path(file.filename or "").suffix.lower()
         if file_ext not in config.ALLOWED_EXTENSIONS:
             raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file_ext}")
 
@@ -206,8 +209,8 @@ async def upload_package(
 
         # 更新版本统计
         if pkg_type == PackageType.FULL:
-            db_version.total_size = file_size
-            db_version.file_count = 1
+            db_version.total_size = int(file_size)  # type: ignore
+            db_version.file_count = 1  # type: ignore
             db.commit()
 
         # 记录存储统计
@@ -228,7 +231,10 @@ async def upload_package(
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         logger.error(f"包上传失败: {e}")
+        logger.error(f"详细错误信息: {error_details}")
         raise HTTPException(status_code=500, detail=f"包上传失败: {str(e)}")
 
 @app.get("/api/v1/version/check")

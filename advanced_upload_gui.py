@@ -12,7 +12,13 @@ import threading
 import os
 from pathlib import Path
 from datetime import datetime
-import hashlib
+# import hashlib  # 暂未使用
+
+# 禁用所有代理
+os.environ['HTTP_PROXY'] = ''
+os.environ['HTTPS_PROXY'] = ''
+os.environ['http_proxy'] = ''
+os.environ['https_proxy'] = ''
 
 class AdvancedUploadGUI:
     def __init__(self, root):
@@ -39,6 +45,13 @@ class AdvancedUploadGUI:
         
     def load_config(self):
         """加载配置"""
+        # 优先使用本地配置
+        local_config_file = Path("local_server_config.json")
+        if local_config_file.exists():
+            with open(local_config_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+
+        # 其次使用部署配置
         config_file = Path("deployment/server_config.json")
         if config_file.exists():
             with open(config_file, 'r', encoding='utf-8') as f:
@@ -46,8 +59,9 @@ class AdvancedUploadGUI:
         else:
             return {
                 "server": {
-                    "ip": "106.14.28.97",
-                    "domain": "update.chpyke.cn"
+                    "ip": "localhost",
+                    "domain": "localhost",
+                    "port": 8000
                 },
                 "api": {
                     "key": "dac450db3ec47d79196edb7a34defaed"
@@ -90,7 +104,18 @@ class AdvancedUploadGUI:
         
         # 进度和日志框架
         self.setup_progress_frame(main_frame, 7)
-        
+
+    def get_server_url(self):
+        """获取完整的服务器URL"""
+        server_config = self.config["server"]
+        ip = server_config["ip"]
+        port = server_config.get("port", 80)  # 默认80端口
+
+        if port == 80:
+            return f"http://{ip}"
+        else:
+            return f"http://{ip}:{port}"
+
     def setup_storage_frame(self, parent, row):
         """设置存储状态框架"""
         storage_frame = ttk.LabelFrame(parent, text="存储状态", padding="10")
@@ -282,20 +307,32 @@ class AdvancedUploadGUI:
         """刷新存储统计"""
         def fetch_stats():
             try:
-                server_ip = self.config["server"]["ip"]
-                response = requests.get(f"http://{server_ip}/api/v1/storage/stats", timeout=10)
-                
+                server_url = self.get_server_url()
+                self.root.after(0, lambda: self.log_message(f"正在连接: {server_url}/api/v1/storage/stats"))
+
+                # 创建新的session以确保没有代理
+                session = requests.Session()
+                session.trust_env = False  # 忽略环境变量中的代理设置
+
+                response = session.get(
+                    f"{server_url}/api/v1/storage/stats",
+                    timeout=10,
+                    proxies={}
+                )
+
                 if response.status_code == 200:
                     stats = response.json()
                     usage = stats.get("usage_percentage", 0)
                     status = stats.get("status", "unknown")
-                    
+
                     # 更新UI
                     self.root.after(0, lambda: self.update_storage_ui(usage, status))
+                    self.root.after(0, lambda: self.log_message(f"存储统计获取成功: {usage:.1f}%"))
                 else:
-                    self.root.after(0, lambda: self.log_message(f"获取存储统计失败: {response.status_code}"))
+                    self.root.after(0, lambda: self.log_message(f"获取存储统计失败: {response.status_code} - {response.text}"))
             except Exception as e:
-                self.root.after(0, lambda: self.log_message(f"连接服务器失败: {e}"))
+                error_msg = f"连接服务器失败: {type(e).__name__}: {e}"
+                self.root.after(0, lambda: self.log_message(error_msg))
         
         threading.Thread(target=fetch_stats, daemon=True).start()
     
@@ -333,7 +370,7 @@ class AdvancedUploadGUI:
                 self.root.after(0, lambda: self.log_message("开始上传..."))
 
                 # 准备上传数据
-                server_ip = self.config["server"]["ip"]
+                server_url = self.get_server_url()
                 api_key = self.config["api"]["key"]
 
                 files = {'file': open(self.selected_file.get(), 'rb')}
@@ -353,10 +390,11 @@ class AdvancedUploadGUI:
 
                 # 执行上传
                 response = requests.post(
-                    f"http://{server_ip}/api/v1/upload/package",
+                    f"{server_url}/api/v1/upload/package",
                     files=files,
                     data=data,
-                    timeout=3600  # 1小时超时
+                    timeout=3600,  # 1小时超时
+                    proxies={}
                 )
 
                 files['file'].close()
@@ -398,13 +436,18 @@ class AdvancedUploadGUI:
                 self.root.after(0, lambda: self.progress_bar.start())
                 self.root.after(0, lambda: self.log_message("开始清理存储..."))
 
-                server_ip = self.config["server"]["ip"]
+                server_url = self.get_server_url()
                 api_key = self.config["api"]["key"]
 
-                response = requests.post(
-                    f"http://{server_ip}/api/v1/storage/cleanup",
+                # 创建新的session以确保没有代理
+                session = requests.Session()
+                session.trust_env = False
+
+                response = session.post(
+                    f"{server_url}/api/v1/storage/cleanup",
                     data={'api_key': api_key},
-                    timeout=300
+                    timeout=300,
+                    proxies={}
                 )
 
                 if response.status_code == 200:
@@ -419,13 +462,13 @@ class AdvancedUploadGUI:
                         self.root.after(0, lambda: self.log_message(f"清理失败: {error_msg}"))
                         self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
                 else:
-                    self.root.after(0, lambda: self.log_message(f"清理请求失败: {response.status_code}"))
+                    self.root.after(0, lambda: self.log_message(f"清理请求失败: {response.status_code} - {response.text}"))
                     self.root.after(0, lambda: messagebox.showerror("错误", f"清理请求失败: {response.status_code}"))
 
                 self.root.after(0, self.refresh_storage_stats)
 
             except Exception as e:
-                error_msg = f"清理失败: {e}"
+                error_msg = f"清理失败: {type(e).__name__}: {e}"
                 self.root.after(0, lambda: self.log_message(error_msg))
                 self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
             finally:
@@ -437,8 +480,8 @@ class AdvancedUploadGUI:
         """查看包列表"""
         def fetch_packages():
             try:
-                server_ip = self.config["server"]["ip"]
-                response = requests.get(f"http://{server_ip}/api/v1/packages", timeout=30)
+                server_url = self.get_server_url()
+                response = requests.get(f"{server_url}/api/v1/packages", timeout=30, proxies={})
 
                 if response.status_code == 200:
                     packages = response.json()
@@ -446,7 +489,8 @@ class AdvancedUploadGUI:
                 else:
                     self.root.after(0, lambda: messagebox.showerror("错误", f"获取包列表失败: {response.status_code}"))
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("错误", f"连接服务器失败: {e}"))
+                error_msg = f"连接服务器失败: {e}"
+                self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
 
         threading.Thread(target=fetch_packages, daemon=True).start()
 
@@ -488,7 +532,7 @@ class AdvancedUploadGUI:
 def main():
     """主函数"""
     root = tk.Tk()
-    app = AdvancedUploadGUI(root)
+    AdvancedUploadGUI(root)
     root.mainloop()
 
 if __name__ == "__main__":
