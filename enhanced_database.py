@@ -4,7 +4,7 @@
 支持完整包、增量包和存储管理
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, BigInteger, ForeignKey, Enum, Float
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, BigInteger, ForeignKey, Enum, Float, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.sql import func
@@ -64,6 +64,7 @@ class Version(Base):
 
     # 关联关系
     packages = relationship("Package", back_populates="version", cascade="all, delete-orphan")
+    single_files = relationship("SingleFile", back_populates="version", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Version(version='{self.version}', release_date='{self.release_date}')>"
@@ -113,6 +114,38 @@ class Package(Base):
 
     def __repr__(self):
         return f"<Package(type='{self.package_type}', version='{self.version_id}')>"
+
+class SingleFile(Base):
+    """单文件表 - 用于文件夹上传的单个文件记录"""
+    __tablename__ = 'single_files'
+
+    id = Column(Integer, primary_key=True, index=True)
+    version_id = Column(Integer, ForeignKey('versions.id'), nullable=False)
+
+    # 文件信息
+    relative_path = Column(String(500), nullable=False)  # 在文件夹中的相对路径
+    file_name = Column(String(255), nullable=False)      # 文件名
+    file_size = Column(BigInteger, nullable=False)       # 文件大小
+    sha256_hash = Column(String(64), nullable=False)     # SHA256哈希值
+
+    # 存储信息
+    storage_path = Column(String(500), nullable=False)   # 服务器存储路径
+
+    # 时间戳
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    # 关联关系
+    version = relationship("Version", back_populates="single_files")
+
+    # 索引
+    __table_args__ = (
+        Index('idx_single_files_version_path', 'version_id', 'relative_path'),
+        Index('idx_single_files_hash', 'sha256_hash'),
+    )
+
+    def __repr__(self):
+        return f"<SingleFile(path='{self.relative_path}', version='{self.version_id}')>"
 
 class PackageFile(Base):
     """包文件表"""

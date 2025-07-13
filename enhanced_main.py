@@ -10,7 +10,7 @@ import logging
 import hashlib
 import json
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -23,8 +23,8 @@ sys.path.append(str(Path(__file__).parent))
 
 from server_config import ServerConfig
 from enhanced_database import (
-    init_database, get_db, Version, Package, PackageFile, 
-    PackageType, PackageStatus, StorageStats, CleanupHistory
+    init_database, get_db, Version, Package, PackageFile,
+    PackageType, PackageStatus, StorageStats, CleanupHistory, SingleFile
 )
 from storage_manager import storage_manager
 from sqlalchemy.orm import Session
@@ -48,6 +48,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 健康检查端点
+@app.get("/health")
+async def health_check():
+    """健康检查端点"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "2.0.0"
+    }
 
 # 配置静态文件服务
 app.mount("/static", StaticFiles(directory=str(config.STATIC_DIR)), name="static")
@@ -383,6 +393,327 @@ async def list_packages(
     except Exception as e:
         logger.error(f"获取包列表失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取包列表失败: {str(e)}")
+
+@app.get("/api/v1/storage/structure")
+async def get_storage_structure(
+    api_key: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """获取存储目录结构和版本文件信息"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        structure = storage_manager.get_storage_structure(db)
+        return structure
+    except Exception as e:
+        logger.error(f"获取存储结构失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取存储结构失败: {str(e)}")
+
+@app.post("/api/v1/storage/retention/apply")
+async def apply_retention_policy(
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """应用版本保留策略"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        result = storage_manager.apply_version_retention_policy(db)
+        return result
+    except Exception as e:
+        logger.error(f"应用版本保留策略失败: {e}")
+        raise HTTPException(status_code=500, detail=f"应用版本保留策略失败: {str(e)}")
+
+@app.post("/api/v1/storage/retention/configure")
+async def configure_retention_policy(
+    package_type: str = Form(...),  # full, patch, hotfix
+    max_versions: int = Form(...),
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """配置版本保留策略"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        # 验证包类型
+        pkg_type = PackageType(package_type.lower())
+        result = storage_manager.configure_retention_policy(pkg_type, max_versions)
+        return result
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"无效的包类型: {package_type}")
+    except Exception as e:
+        logger.error(f"配置版本保留策略失败: {e}")
+        raise HTTPException(status_code=500, detail=f"配置版本保留策略失败: {str(e)}")
+
+@app.get("/api/v1/version/changes")
+async def get_version_changes(
+    version: str = Query(...),
+    platform: str = Query("windows"),
+    arch: str = Query("x64"),
+    api_key: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """获取版本文件变化信息"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        changes = storage_manager.get_file_changes(db, version, platform, arch)
+        return changes
+    except Exception as e:
+        logger.error(f"获取版本变化信息失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取版本变化信息失败: {str(e)}")
+
+@app.post("/api/v1/file/verify")
+async def verify_file_integrity(
+    file_path: str = Form(...),
+    expected_hash: str = Form(...),
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """验证文件完整性"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        from pathlib import Path
+        result = storage_manager.verify_file_integrity(Path(file_path), expected_hash)
+        return result
+    except Exception as e:
+        logger.error(f"文件完整性验证失败: {e}")
+        raise HTTPException(status_code=500, detail=f"文件完整性验证失败: {str(e)}")
+
+@app.post("/api/v1/version/rollback")
+async def rollback_version(
+    package_id: int = Form(...),
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """回滚到备份版本"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        result = storage_manager.rollback_version(db, package_id)
+        return result
+    except Exception as e:
+        logger.error(f"版本回滚失败: {e}")
+        raise HTTPException(status_code=500, detail=f"版本回滚失败: {str(e)}")
+
+@app.post("/api/v1/upload/file")
+async def upload_single_file(
+    file: UploadFile = File(...),
+    version: str = Form(...),
+    platform: str = Form("windows"),
+    arch: str = Form("x64"),
+    relative_path: str = Form(...),  # 文件在文件夹中的相对路径
+    file_hash: str = Form(None),     # 文件SHA256哈希值
+    conflict_action: str = Form("skip"),  # 冲突处理: skip, overwrite, ask
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """上传单个文件到指定版本目录"""
+
+    logger.info(f"收到单文件上传请求: version={version}, platform={platform}, arch={arch}, path={relative_path}")
+
+    # 验证API密钥
+    if api_key != config.API_KEY:
+        logger.warning(f"API密钥验证失败: 收到={api_key}, 期望={config.API_KEY}")
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        # 检查或创建版本记录
+        version_record = db.query(Version).filter(
+            Version.version == version,
+            Version.platform == platform,
+            Version.architecture == arch
+        ).first()
+
+        if not version_record:
+            # 创建新版本记录
+            version_record = Version(
+                version=version,
+                platform=platform,
+                architecture=arch,
+                description=f"文件夹上传版本 {version}",
+                is_stable=True,
+                is_critical=False
+            )
+            db.add(version_record)
+            db.commit()
+            db.refresh(version_record)
+            logger.info(f"创建新版本记录: {version}-{platform}-{arch}")
+
+        # 构建存储路径
+        storage_path = storage_manager.full_path / version / platform / arch / relative_path
+        storage_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 检查文件是否已存在
+        if storage_path.exists():
+            existing_hash = storage_manager._calculate_file_hash(storage_path)
+
+            # 如果提供了哈希值，检查文件是否相同
+            if file_hash and existing_hash == file_hash:
+                logger.info(f"文件已存在且哈希匹配，跳过: {relative_path}")
+                return {
+                    "success": True,
+                    "message": "文件已存在且内容相同，跳过上传",
+                    "file_path": relative_path,
+                    "existing_hash": existing_hash,
+                    "action": "skipped"
+                }
+
+            # 处理文件冲突
+            if conflict_action == "skip":
+                logger.info(f"文件已存在，根据策略跳过: {relative_path}")
+                return {
+                    "success": True,
+                    "message": "文件已存在，根据策略跳过",
+                    "file_path": relative_path,
+                    "existing_hash": existing_hash,
+                    "action": "skipped"
+                }
+            elif conflict_action == "ask":
+                # 返回冲突信息，让客户端决定
+                return {
+                    "success": False,
+                    "message": "文件冲突需要用户决定",
+                    "file_path": relative_path,
+                    "existing_hash": existing_hash,
+                    "new_hash": file_hash,
+                    "action": "conflict",
+                    "conflict_info": {
+                        "existing_size": storage_path.stat().st_size,
+                        "existing_modified": storage_path.stat().st_mtime
+                    }
+                }
+            # conflict_action == "overwrite" 时继续执行，覆盖文件
+
+        # 保存文件
+        file_content = await file.read()
+
+        # 如果之前读取过文件（冲突检查），需要重新读取
+        if file.file.tell() > 0:
+            await file.seek(0)
+            file_content = await file.read()
+
+        with open(storage_path, "wb") as f:
+            f.write(file_content)
+
+        # 计算文件哈希
+        actual_hash = storage_manager._calculate_file_hash(storage_path)
+
+        # 验证哈希（如果提供）
+        if file_hash and actual_hash != file_hash:
+            storage_path.unlink()  # 删除损坏的文件
+            raise HTTPException(status_code=400, detail="文件哈希验证失败")
+
+        # 检查是否已有此文件的记录
+        existing_file = db.query(SingleFile).filter(
+            SingleFile.version_id == version_record.id,
+            SingleFile.relative_path == relative_path
+        ).first()
+
+        if existing_file:
+            # 更新现有记录
+            existing_file.file_size = len(file_content)
+            existing_file.sha256_hash = actual_hash
+            existing_file.storage_path = str(storage_path)
+            existing_file.updated_at = datetime.utcnow()
+            logger.info(f"更新文件记录: {relative_path}")
+        else:
+            # 创建新文件记录
+            file_record = SingleFile(
+                version_id=version_record.id,
+                relative_path=relative_path,
+                file_name=Path(relative_path).name,
+                file_size=len(file_content),
+                sha256_hash=actual_hash,
+                storage_path=str(storage_path)
+            )
+            db.add(file_record)
+            logger.info(f"创建新文件记录: {relative_path}")
+
+        db.commit()
+
+        logger.info(f"单文件上传成功: {relative_path} ({len(file_content)} 字节)")
+
+        return {
+            "success": True,
+            "message": "文件上传成功",
+            "file_path": relative_path,
+            "file_size": len(file_content),
+            "sha256": actual_hash,
+            "action": "uploaded"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"单文件上传失败: {e}")
+        logger.error(f"详细错误信息: {error_details}")
+        raise HTTPException(status_code=500, detail=f"文件上传失败: {str(e)}")
+
+@app.get("/api/v1/files/list")
+async def list_version_files(
+    version: str = Query(...),
+    platform: str = Query("windows"),
+    arch: str = Query("x64"),
+    api_key: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """获取指定版本的文件列表"""
+    if api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="无效的API密钥")
+
+    try:
+        # 查找版本记录
+        version_record = db.query(Version).filter(
+            Version.version == version,
+            Version.platform == platform,
+            Version.architecture == arch
+        ).first()
+
+        if not version_record:
+            return {"files": [], "total_count": 0, "total_size": 0}
+
+        # 获取文件列表
+        files = db.query(SingleFile).filter(
+            SingleFile.version_id == version_record.id
+        ).all()
+
+        file_list = []
+        total_size = 0
+
+        for file_record in files:
+            file_info = {
+                "relative_path": file_record.relative_path,
+                "file_name": file_record.file_name,
+                "file_size": file_record.file_size,
+                "sha256": file_record.sha256_hash,
+                "created_at": file_record.created_at.isoformat() if file_record.created_at else None,
+                "updated_at": file_record.updated_at.isoformat() if file_record.updated_at else None
+            }
+            file_list.append(file_info)
+            total_size += file_record.file_size
+
+        return {
+            "files": file_list,
+            "total_count": len(file_list),
+            "total_size": total_size,
+            "version": version,
+            "platform": platform,
+            "architecture": arch
+        }
+
+    except Exception as e:
+        logger.error(f"获取文件列表失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(
