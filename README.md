@@ -1,394 +1,171 @@
-# Omega更新服务器 - 模块化架构版 v3.1
+# Omega 更新系统
 
-一个功能完整的软件更新服务器，支持完整包、增量包和智能存储管理。采用模块化架构设计，提供更好的维护性和扩展性。
+一个完整的软件更新管理系统，支持完整包、增量包和智能存储管理。采用模块化架构设计，提供服务器端和客户端工具的完整解决方案。
 
-## 🚀 主要特性
+## 🚀 快速开始
 
-### 多类型更新包支持
-- **完整包 (FULL)**: 支持大文件上传（8GB+），适用于全新安装
-- **增量包 (PATCH)**: 版本间增量更新，节省带宽和存储空间
-- **热修复包 (HOTFIX)**: 紧急bug修复，快速部署
+### 环境准备
 
-### 智能存储管理
-- **自动清理**: 存储使用率达到85%时自动清理旧版本
-- **版本保护**: 关键版本和最新稳定版本受保护
-- **存储监控**: 实时监控存储使用情况和健康状态
-- **空间优化**: 针对40GB存储空间的智能分配策略
+1. **安装 Python 依赖**：
+   ```bash
+   pipenv install
+   pipenv shell
+   ```
 
-### 模块化架构 (v3.1新特性)
-- **代码模块化**: 清晰的职责分离，每个模块不超过500行
-- **工厂模式**: 统一的GUI组件创建和管理
-- **类型安全**: 完整的类型注解和错误处理
-- **易于维护**: 便于扩展、测试和调试
+2. **配置环境变量**：
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 文件，设置 API_KEY 等必要配置
+   ```
 
-### 高级管理功能
-- **独立GUI工具**: 上传工具和下载工具完全独立
-- **RESTful API**: 完整的API接口，支持自动化集成
-- **版本管理**: 智能版本检查，优先推荐增量更新
-- **下载统计**: 详细的下载和使用统计
+### 启动系统
 
-## 📁 项目结构 (v3.1 模块化架构)
+使用新的启动脚本，一键启动各个组件：
+
+```bash
+# 启动服务器（后端 API）
+python start_server.py
+
+# 启动上传工具（GUI）
+python start_upload_tool.py
+
+# 启动下载工具（GUI）
+python start_download_tool.py
+```
+
+### 服务器访问
+
+- **服务器地址**：http://localhost:8000
+- **API 文档**：http://localhost:8000/docs
+- **健康检查**：http://localhost:8000/health
+
+## 📁 项目结构
 
 ```
 omega-update/
-├── 🏗️ 核心模块 (新架构)
-│   ├── ui_factory.py             # GUI组件工厂 (345行)
-│   ├── upload_handler.py         # 上传业务逻辑 (388行)
-│   ├── download_handler.py       # 下载业务逻辑 (363行)
-│   └── storage_handler.py        # 存储管理逻辑 (239行)
-├── 🖥️ 客户端工具
-│   ├── upload_tool.py            # 上传工具 (418行)
-│   ├── download_tool.py          # 下载工具 (405行)
-│   ├── start_upload_tool.sh      # Linux/macOS启动脚本
-│   └── start_download_tool.sh    # Linux/macOS启动脚本
-├── 🔧 支持模块
-│   ├── common_utils.py           # 共享工具函数
-│   ├── local_file_scanner.py     # 本地文件扫描
-│   ├── difference_detector.py    # 差异检测
-│   └── download_manager.py       # 下载管理
-├── 🗄️ 服务器端
-│   ├── enhanced_database.py      # 增强数据库模型
-│   ├── storage_manager.py        # 存储管理器
-│   ├── enhanced_main.py          # 增强版API服务
-│   └── deploy_enhanced_version.ps1 # 部署脚本
-├── 📚 文档
-│   ├── README.md                 # 项目说明 (本文件)
-│   ├── REFACTORING_COMPLETE_SUMMARY.md # 重构总结
-│   ├── MIGRATION_GUIDE.md        # 迁移指南
-│   └── API_DOCUMENTATION.md      # API文档
-├── 🚀 部署文件
-│   └── deployment/               # 部署相关文件
-│       ├── server_config.json   # 服务器配置
-│       ├── nginx.conf           # Nginx配置
-│       ├── deploy.sh            # Linux部署脚本
-│       └── quick_deploy.sh      # 快速部署脚本
-└── 📦 原始模块 (兼容性保留)
-    └── update_server/           # 原始服务器模块
-        ├── api/                 # API模块
-        ├── models/              # 数据模型
-        └── utils/               # 工具函数
+├── 📁 server/                     # 🖥️ 服务器核心模块
+│   ├── enhanced_main.py           # FastAPI 主应用
+│   ├── enhanced_database.py       # SQLAlchemy 数据库模型
+│   ├── server_config.py           # 服务器配置管理
+│   ├── storage_manager.py         # 存储空间管理器
+│   └── omega_updates.db           # SQLite 数据库文件
+├── 📁 tools/                      # 🛠️ 客户端工具模块
+│   ├── 📁 upload/                 # 📤 上传工具
+│   │   ├── upload_tool.py         # GUI 上传工具
+│   │   ├── auto_upload.py         # 自动上传工具
+│   │   ├── auto_upload_batch.py   # 批量上传工具
+│   │   └── upload_handler.py      # 上传业务逻辑
+│   ├── 📁 download/               # 📥 下载工具
+│   │   ├── download_tool.py       # GUI 下载工具
+│   │   ├── download_manager.py    # 下载管理器
+│   │   ├── download_handler.py    # 下载业务逻辑
+│   │   └── local_file_scanner.py  # 本地文件扫描器
+│   └── 📁 common/                 # 🔧 通用工具
+│       ├── common_utils.py        # 通用工具函数
+│       ├── ui_factory.py          # GUI 组件工厂
+│       ├── storage_handler.py     # 存储处理器
+│       └── difference_detector.py # 文件差异检测器
+├── 📁 config/                     # ⚙️ 配置文件
+│   ├── config.json                # 主配置文件
+│   ├── upload_config.json         # 上传工具配置
+│   └── *.json                     # 其他配置文件
+├── 📁 deployment/                 # 🚀 部署相关文件
+├── 📁 releases/                   # 📦 发布版本
+├── 📁 docs/                       # 📚 项目文档
+├── 📁 scripts/                    # 📜 构建和部署脚本
+├── 🐍 start_server.py             # 服务器启动脚本
+├── 🐍 start_upload_tool.py        # 上传工具启动脚本
+├── 🐍 start_download_tool.py      # 下载工具启动脚本
+├── ⚙️ .env                        # 环境变量配置
+├── ⚙️ .env.example                # 环境变量配置模板
+├── 📦 Pipfile                     # Python 依赖管理
+└── 📄 PROJECT_STRUCTURE.md        # 详细项目结构说明
 ```
 
-## 🛠️ 快速开始
+## ✨ 功能特性
 
-### 1. 环境要求
+### 服务器端功能
+- ✅ **RESTful API 接口** - 完整的 HTTP API，支持 OpenAPI 文档
+- ✅ **完整包管理** - 支持完整软件包的上传、存储和分发
+- ✅ **增量包支持** - 智能增量更新，减少下载量
+- ✅ **热修复包** - 紧急修复包的快速分发
+- ✅ **智能存储管理** - 自动清理、版本保留策略
+- ✅ **文件完整性验证** - SHA256 哈希验证
+- ✅ **版本回滚功能** - 支持版本回退和恢复
 
-**服务器端:**
-- Ubuntu 22.04 LTS
-- Python 3.8+
-- Nginx
-- 至少40GB存储空间
+### 客户端工具功能
+- ✅ **图形化上传工具** - 直观的 GUI 界面，支持文件和文件夹上传
+- ✅ **图形化下载工具** - 智能更新检查和下载管理
+- ✅ **批量处理** - 支持批量上传和自动化操作
+- ✅ **断点续传** - 网络中断后可继续传输
+- ✅ **进度监控** - 实时显示传输进度和状态
+- ✅ **差异检测** - 智能识别需要更新的文件
 
-**客户端:**
-- Windows 10/11
-- Python 3.8+
-- PowerShell 5.0+
+## 🛠️ 开发指南
 
-### 2. 服务器部署
+### 模块化架构
 
-#### 自动部署（推荐）
-```powershell
-# 克隆项目
-git clone <repository-url>
-cd omega-update
+项目采用模块化设计，各模块职责清晰：
 
-# 执行自动部署
-.\deploy_enhanced_version.ps1
-```
+- **server/** - 服务器端核心逻辑，基于 FastAPI
+- **tools/upload/** - 上传相关功能模块
+- **tools/download/** - 下载相关功能模块
+- **tools/common/** - 共享工具和组件
 
-#### 手动部署
-详见 [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+### 开发环境设置
 
-### 3. 使用客户端工具 (v3.1 新版)
+1. **克隆项目**：
+   ```bash
+   git clone <repository-url>
+   cd omega-update
+   ```
 
-#### 上传工具
-```bash
-# Linux/macOS (推荐)
-./start_upload_tool.sh
+2. **安装开发依赖**：
+   ```bash
+   pipenv install --dev
+   pipenv shell
+   ```
 
-# 直接启动
-python upload_tool.py
-```
+3. **配置开发环境**：
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 文件设置开发配置
+   ```
 
-#### 下载工具
-```bash
-# Linux/macOS (推荐)
-./start_download_tool.sh
+### 添加新功能
 
-# 直接启动
-python download_tool.py
-```
+1. **服务器端**：在 `server/` 目录下修改相应模块
+2. **客户端工具**：在 `tools/` 对应子目录下开发
+3. **共享功能**：在 `tools/common/` 目录下添加通用组件
 
-#### 功能特性
-- **独立运行**: 两个工具完全独立，可单独使用
-- **模块化设计**: 基于工厂模式的组件架构
-- **类型安全**: 完整的类型注解和错误处理
-- **用户友好**: 直观的界面和详细的进度显示
+## 📚 文档
 
-## 📊 存储管理策略
+详细文档请查看 `docs/` 目录：
 
-### 存储分配
-- **总存储**: 40GB
-- **完整包**: 最多3个版本 (24GB)
-- **增量包**: 最多10个版本 (4GB)  
-- **热修复包**: 最多20个版本 (1GB)
-- **临时文件**: 1GB
+- [📖 API 文档](docs/API_DOCUMENTATION.md) - 完整的 API 接口说明
+- [🚀 部署指南](docs/DEPLOYMENT_GUIDE.md) - 生产环境部署指南
+- [🏗️ 项目结构](PROJECT_STRUCTURE.md) - 详细的项目结构说明
 
-### 自动清理规则
-1. **触发条件**: 存储使用率 > 85%
-2. **清理优先级**:
-   - 临时文件和失败上传
-   - 超量热修复包
-   - 超量增量包
-   - 非关键完整包
-3. **保护规则**: 最新稳定版本和关键版本永不删除
-
-## 🔌 API接口
-
-### 核心接口
-
-#### 上传更新包
-```http
-POST /api/v1/upload/package
-Content-Type: multipart/form-data
-
-version: string          # 版本号
-package_type: string     # full/patch/hotfix
-description: string      # 描述
-is_stable: boolean       # 是否稳定版本
-is_critical: boolean     # 是否关键更新
-platform: string        # 平台 (windows/linux/macos)
-arch: string            # 架构 (x64/x86/arm64)
-from_version: string    # 源版本 (仅增量包)
-file: file              # 更新包文件
-api_key: string         # API密钥
-```
-
-#### 版本检查
-```http
-GET /api/v1/version/check?current_version=2.2.5&platform=windows&arch=x64
-```
-
-#### 存储统计
-```http
-GET /api/v1/storage/stats
-```
-
-#### 包列表
-```http
-GET /api/v1/packages?package_type=full&limit=20
-```
-
-详细API文档: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
-
-## 🎯 使用场景
-
-### 1. 软件发布流程
-```
-开发完成 → 打包 → 上传完整包 → 测试 → 发布稳定版
-```
-
-### 2. 增量更新流程  
-```
-版本A → 开发变更 → 生成增量包 → 上传增量包 → 客户端增量更新
-```
-
-### 3. 紧急修复流程
-```
-发现bug → 快速修复 → 打包热修复 → 上传热修复包 → 立即推送
-```
-
-## 📈 监控和维护
-
-### 存储监控
-- **警告阈值**: 80%使用率
-- **清理阈值**: 85%使用率  
-- **严重阈值**: 90%使用率
-
-### 日志管理
-- 服务器日志: `/opt/omega-update-server/logs/`
-- Nginx日志: `/var/log/nginx/`
-- 系统日志: `journalctl -u omega-update-server`
-
-### 备份策略
-- 数据库定期备份
-- 关键版本文件备份
-- 配置文件版本控制
-
-## 🔧 配置说明
-
-### 服务器配置
-```json
-{
-  "server": {
-    "ip": "106.14.28.97",
-    "domain": "update.chpyke.cn"
-  },
-  "api": {
-    "key": "your-api-key-here"
-  },
-  "storage": {
-    "max_full_packages": 3,
-    "max_patch_packages": 10,
-    "max_hotfix_packages": 20,
-    "cleanup_threshold": 0.85
-  }
-}
-```
-
-### 环境变量
-```bash
-API_KEY=your-api-key
-DATABASE_URL=sqlite:///./omega_updates.db
-MAX_FILE_SIZE=1073741824
-LOG_LEVEL=INFO
-```
-
-## 🚨 故障排除
+## 🔧 故障排除
 
 ### 常见问题
 
-**1. 上传失败**
-- 检查文件大小限制
-- 验证API密钥
-- 检查网络连接
+1. **导入错误**：确保使用提供的启动脚本，它们会自动设置正确的 Python 路径
+2. **配置问题**：检查 `.env` 文件是否正确配置
+3. **端口冲突**：默认端口 8000，可在 `.env` 中修改 `SERVER_PORT`
 
-**2. 存储空间不足**
-- 执行手动清理
-- 检查清理配置
-- 考虑扩展存储
+### 获取帮助
 
-**3. 服务无法启动**
-- 检查端口占用
-- 验证配置文件
-- 查看错误日志
-
-详细故障排除: [TROUBLESHOOTING.md](deployment/TROUBLESHOOTING.md)
-
-## 📝 更新日志
-
-### v3.1.0 (模块化架构版) - 2025-07-13
-- 🎯 **代码重构**: 完成模块化重构，每个文件不超过500行
-- 🏗️ **架构优化**: 采用工厂模式和依赖注入设计
-- 🔧 **类型安全**: 添加完整的类型注解和错误处理
-- 📦 **工具分离**: 上传和下载工具完全独立
-- 🚀 **性能提升**: 优化内存使用和响应速度
-- 📚 **文档完善**: 新增迁移指南和重构总结
-- 🧪 **测试覆盖**: 全面的功能测试验证
-
-### v2.0.0 (增强版)
-- ✅ 支持多类型更新包 (完整包/增量包/热修复包)
-- ✅ 智能存储管理和自动清理
-- ✅ 高级GUI管理工具
-- ✅ 增强的API接口
-- ✅ 大文件上传支持 (1GB+)
-
-### v1.0.0 (基础版)
-- ✅ 基础更新服务器功能
-- ✅ 简单文件上传下载
-- ✅ 版本管理
-
-## 🔧 开发指南 (v3.1 新增)
-
-### 模块化架构说明
-
-#### 核心设计原则
-- **单一职责**: 每个模块专注特定功能
-- **依赖注入**: 通过构造函数注入依赖
-- **工厂模式**: 统一的组件创建和配置
-- **类型安全**: 完整的类型注解
-
-#### 模块职责分工
-```python
-# UI组件工厂 - 负责界面组件创建
-from ui_factory import UIComponentFactory, WindowFactory
-
-# 业务逻辑处理器 - 负责核心业务逻辑
-from upload_handler import UploadHandler
-from download_handler import DownloadHandler
-from storage_handler import StorageHandler
-
-# 主应用程序 - 负责协调和界面管理
-from upload_tool import UploadToolRefactored
-from download_tool import DownloadToolRefactored
-```
-
-#### 扩展新功能
-```python
-# 1. 扩展UI组件
-class CustomUIFactory(UIComponentFactory):
-    @staticmethod
-    def create_custom_component():
-        # 自定义组件逻辑
-        pass
-
-# 2. 扩展业务逻辑
-class CustomUploadHandler(UploadHandler):
-    def custom_upload_logic(self):
-        # 自定义业务逻辑
-        pass
-
-# 3. 在主工具中使用
-class CustomUploadTool(UploadToolRefactored):
-    def __init__(self, root):
-        super().__init__(root)
-        self.custom_handler = CustomUploadHandler(self.log_manager)
-```
-
-### 代码质量要求
-- **文件大小**: 每个文件不超过500行
-- **函数复杂度**: 每个函数不超过50行
-- **类型注解**: 所有公共接口必须有类型注解
-- **错误处理**: 完善的异常处理和日志记录
-
-### 测试指南
-```bash
-# 运行模块测试
-python -m pytest tests/
-
-# 功能测试
-python test_upload_tool.py
-python test_download_tool.py
-
-# 集成测试
-python test_integration.py
-```
-
-## 🤝 贡献指南
-
-### 开发流程
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 遵循代码质量要求
-4. 添加相应的测试
-5. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-6. 推送到分支 (`git push origin feature/AmazingFeature`)
-7. 创建 Pull Request
-
-### 代码规范
-- 遵循PEP 8代码风格
-- 使用有意义的变量和函数名
-- 添加适当的注释和文档字符串
-- 保持模块化设计原则
+- 查看 `docs/` 目录下的详细文档
+- 检查日志文件（默认在 `/var/log/omega-updates/`）
+- 使用 API 文档页面测试接口：http://localhost:8000/docs
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
-
-## 📞 支持
-
-### 文档资源
-- **使用指南**: 本README文件
-- **迁移指南**: [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
-- **重构总结**: [REFACTORING_COMPLETE_SUMMARY.md](REFACTORING_COMPLETE_SUMMARY.md)
-- **API文档**: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
-- **部署指南**: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-
-### 获取帮助
-- 问题反馈: [Issues](issues)
-- 功能讨论: [Discussions](discussions)
-- 技术支持: 查看相关文档或提交Issue
+MIT License
 
 ---
 
-**Omega更新服务器 v3.1** - 模块化架构，让软件更新变得简单高效 🚀
+**版本**: 2.0.0
+**最后更新**: 2025-07-14
+**维护状态**: 积极维护
