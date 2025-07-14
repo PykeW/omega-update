@@ -1,0 +1,17 @@
+{
+  "server": {
+    "url": "http://106.14.28.97:8000",
+    "api_key": "your_api_key_here"
+  },
+  "upload": {
+    "default_platform": "windows",
+    "default_architecture": "x64",
+    "default_package_type": "full",
+    "default_is_stable": true,
+    "default_is_critical": false
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "auto_upload.log"
+  }
+}

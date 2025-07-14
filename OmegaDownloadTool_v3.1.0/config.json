@@ -1,0 +1,33 @@
+{
+  "server": {
+    "url": "http://106.14.28.97:8000",
+    "api_key": "dac450db3ec47d79b8e8b5c6e9f4a2b1",
+    "timeout": 30
+  },
+  "api": {
+    "endpoints": {
+      "upload": "/api/upload",
+      "download": "/api/download",
+      "packages": "/api/packages",
+      "storage": "/api/storage"
+    }
+  },
+  "download": {
+    "chunk_size": 8192,
+    "max_retries": 3,
+    "retry_delay": 2,
+    "concurrent_downloads": 4
+  },
+  "ui": {
+    "window_size": "1000x700",
+    "theme": "default",
+    "auto_refresh": true,
+    "refresh_interval": 30
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "download_tool.log",
+    "max_size": "10MB",
+    "backup_count": 3
+  }
+}
