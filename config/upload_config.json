@@ -1,7 +1,7 @@
 {
   "server": {
     "url": "http://106.14.28.97:8000",
-    "api_key": "dac450db3ec47d79b8e8b5c6e9f4a2b1"
+    "api_key": "dac450db3ec47d79196edb7a34defaed"
   },
   "upload": {
     "default_platform": "windows",
@@ -9,10 +9,10 @@
     "default_package_type": "full",
     "default_is_stable": true,
     "default_is_critical": false,
-    "chunk_size": 8192,
-    "timeout": 300,
-    "retry_count": 3,
-    "retry_delay": 5
+    "chunk_size": 65536,
+    "timeout": 600,
+    "retry_count": 5,
+    "retry_delay": 10
   },
   "logging": {
     "level": "INFO",

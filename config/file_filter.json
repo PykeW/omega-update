@@ -1,0 +1,21 @@
+{
+  "exclude_patterns": [
+    "*.tmp",
+    "*.temp",
+    "*.log",
+    "*.bak",
+    ".git",
+    ".svn",
+    "__pycache__",
+    "*.pyc",
+    "Thumbs.db",
+    ".DS_Store",
+    "api-ms-win-*.dll",
+    "vcruntime*.dll",
+    "msvcp*.dll",
+    "msvcr*.dll",
+    "*.pdb"
+  ],
+  "max_file_size": 104857600,
+  "skip_large_files": true
+}

@@ -18,9 +18,9 @@ os.chdir(project_root)
 if __name__ == "__main__":
     # 导入并启动下载工具
     from tools.download.download_tool import DownloadToolRefactored
-    
+
     print("启动 Omega 下载工具...")
-    
+
     root = tk.Tk()
-    app = DownloadToolRefactored(root)
+    DownloadToolRefactored(root)
     root.mainloop()

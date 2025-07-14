@@ -16,18 +16,17 @@ os.chdir(project_root)
 
 if __name__ == "__main__":
     # 导入并启动服务器
-    from server.enhanced_main import app
     import uvicorn
     from server.server_config import ServerConfig
-    
+
     config = ServerConfig()
-    
+
     print("=" * 50)
     print("Omega 更新服务器启动中...")
     print(f"服务器地址: http://{config.SERVER_HOST}:{config.SERVER_PORT}")
     print(f"API 文档: http://{config.SERVER_HOST}:{config.SERVER_PORT}/docs")
     print("=" * 50)
-    
+
     uvicorn.run(
         "server.enhanced_main:app",
         host=config.SERVER_HOST,

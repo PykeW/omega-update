@@ -1,0 +1,72 @@
+[flake8]
+# 最大行长度，与 black 保持一致
+max-line-length = 88
+
+# 忽略的错误代码
+extend-ignore = 
+    # E203: whitespace before ':' (与 black 冲突)
+    E203,
+    # W503: line break before binary operator (与 black 冲突)
+    W503,
+    # E501: line too long (由 black 处理)
+    E501,
+    # F401: imported but unused (在 __init__.py 中常见)
+    # F403: 'from module import *' used; unable to detect undefined names
+    # F405: name may be undefined, or defined from star imports
+
+# 排除的文件和目录
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    releases,
+    docs/_build,
+    .tox,
+    migrations,
+    node_modules
+
+# 每个文件的特定忽略规则
+per-file-ignores =
+    # __init__.py 文件可以有未使用的导入
+    __init__.py:F401,F403
+    # 测试文件可以有未使用的导入和长行
+    tests/*:F401,E501,F403,F405
+    # 配置文件
+    setup.py:E501
+    # 启动脚本
+    start_*.py:E501
+
+# 最大复杂度
+max-complexity = 10
+
+# 导入顺序风格
+import-order-style = google
+
+# 应用程序导入名称
+application-import-names = server,tools
+
+# 内置模块名称
+builtin = 
+    __future__,
+    __main__
+
+# 文档字符串约定
+docstring-convention = google
+
+# 选择检查的错误类型
+select = 
+    E,  # pycodestyle errors
+    W,  # pycodestyle warnings
+    F,  # pyflakes
+    C,  # mccabe complexity
+    B,  # flake8-bugbear
+    I,  # isort
+
+# 启用的插件
+enable-extensions = 
+    G  # flake8-logging-format

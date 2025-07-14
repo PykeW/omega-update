@@ -1,0 +1,123 @@
+# Pre-commit hooks 配置
+# 安装: pip install pre-commit
+# 设置: pre-commit install
+# 运行: pre-commit run --all-files
+
+repos:
+  # 基础代码质量检查
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: debug-statements
+      - id: name-tests-test
+        args: ['--pytest-test-first']
+      - id: requirements-txt-fixer
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Python 代码格式化
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+        args: ['--line-length=88']
+
+  # 导入排序
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ['--profile', 'black', '--line-length=88']
+
+  # 代码质量检查
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+          - flake8-docstrings
+          - flake8-import-order
+
+  # 类型检查
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-requests
+          - types-python-dateutil
+        args: [--ignore-missing-imports]
+
+  # 安全检查
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: ['-r', '.', '-f', 'json', '-o', 'bandit-report.json']
+        exclude: ^tests/
+
+  # 文档字符串检查
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        args: ['--convention=google']
+        exclude: ^(tests/|migrations/)
+
+  # YAML 格式化
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [yaml, markdown, json]
+        exclude: ^(Pipfile\.lock|\.vscode/)
+
+  # Shell 脚本检查
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        args: ['-e', 'SC1091']  # 忽略 source 文件不存在的警告
+
+  # 提交信息检查
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.13.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+# 全局配置
+default_language_version:
+  python: python3.10
+
+# CI 配置
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

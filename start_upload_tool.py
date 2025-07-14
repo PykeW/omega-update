@@ -18,9 +18,9 @@ os.chdir(project_root)
 if __name__ == "__main__":
     # 导入并启动上传工具
     from tools.upload.upload_tool import UploadToolRefactored
-    
+
     print("启动 Omega 上传工具...")
-    
+
     root = tk.Tk()
-    app = UploadToolRefactored(root)
+    UploadToolRefactored(root)
     root.mainloop()

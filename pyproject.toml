@@ -1,0 +1,177 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omega-update"
+version = "2.0.0"
+description = "一个完整的软件更新管理系统，支持完整包、增量包和智能存储管理"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Omega Development Team", email = "dev@omega-update.com"}
+]
+maintainers = [
+    {name = "Omega Development Team", email = "dev@omega-update.com"}
+]
+keywords = ["update", "system", "software", "distribution", "patch", "management", "fastapi", "gui"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Software Distribution",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "python-multipart>=0.0.6",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "psutil>=5.9.0",
+    "bsdiff4>=1.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
+]
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/omega-team/omega-update"
+Documentation = "https://omega-update.readthedocs.io/"
+Repository = "https://github.com/omega-team/omega-update.git"
+"Bug Reports" = "https://github.com/omega-team/omega-update/issues"
+Changelog = "https://github.com/omega-team/omega-update/blob/main/CHANGELOG.md"
+
+[project.scripts]
+omega-server = "server.enhanced_main:main"
+omega-upload = "tools.upload.upload_tool:main"
+omega-download = "tools.download.download_tool:main"
+
+[tool.setuptools]
+packages = ["server", "tools", "tools.upload", "tools.download", "tools.common"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.conf", "*.service", "*.sh", "*.ps1"]
+
+# Black 代码格式化配置
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # 排除的目录
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | releases
+)/
+'''
+
+# isort 导入排序配置
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["server", "tools"]
+known_third_party = ["fastapi", "uvicorn", "sqlalchemy", "requests", "psutil"]
+
+# MyPy 类型检查配置
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "bsdiff4.*",
+    "psutil.*",
+]
+ignore_missing_imports = true
+
+# Pytest 测试配置
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+# Coverage 配置
+[tool.coverage.run]
+source = ["server", "tools"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "setup.py",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# Flake8 配置（在 setup.cfg 中定义，这里仅作参考）
+# [tool.flake8] - flake8 不支持 pyproject.toml，需要在 setup.cfg 中配置
