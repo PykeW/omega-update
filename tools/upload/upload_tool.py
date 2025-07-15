@@ -1,429 +1,413 @@
 #!/usr/bin/env python3
 """
-Omega更新服务器 - 重构后的独立上传工具.
-
-模块化设计，专门用于文件上传、存储管理和版本控制.
+简化上传工具
+实现新的三版本类型上传界面
 """
 
-import sys
 import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+import sys
+import threading
+import json
+import requests
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
-from typing import Any, Dict, Optional, cast
+from typing import Optional, Dict, Any
 
-# 导入共享模块
+# 添加项目路径
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from tools.common.common_utils import AppConstants, LogManager, get_config
-from tools.common.storage_handler import StorageHandler
-from tools.common.ui_factory import UIComponentFactory, WindowFactory
+from tools.common.common_utils import get_config, get_server_url, get_api_key
 from tools.upload.upload_handler import UploadHandler
 
 
-class UploadToolRefactored:
-    """重构后的上传工具主类"""
+class SimplifiedUploadTool:
+    """简化上传工具"""
 
     def __init__(self, root: tk.Tk):
-        """
-        初始化上传工具
-
-        Args:
-            root: 主窗口
-        """
         self.root = root
-        self.root.title(AppConstants.UPLOAD_TOOL_TITLE)
-        self.root.geometry(AppConstants.UPLOAD_WINDOW_SIZE)
+        self.root.title("Omega更新服务器 - 简化上传工具")
+        self.root.geometry("600x500")
+        self.root.resizable(True, True)
 
         # 配置
         self.config = get_config()
+        self.server_url = get_server_url()
+        self.api_key = get_api_key()
 
-        # 界面变量
-        self.selected_folder = tk.StringVar()
-        self.package_type = tk.StringVar(value="full")
-        self.version = tk.StringVar()
-        self.from_version = tk.StringVar()
-        self.description = tk.StringVar()
-        self.is_stable = tk.BooleanVar(value=True)
-        self.is_critical = tk.BooleanVar(value=False)
-        self.platform = tk.StringVar(value="windows")
-        self.architecture = tk.StringVar(value="x64")
+        # 变量
+        self.folder_path_var = tk.StringVar()
+        self.version_type_var = tk.StringVar(value="stable")
+        self.platform_var = tk.StringVar(value="windows")
+        self.architecture_var = tk.StringVar(value="x64")
+        self.description_var = tk.StringVar()
 
-        # 业务逻辑处理器
-        self.log_manager: Optional[LogManager] = None
-        self.upload_handler: Optional[UploadHandler] = None
-        self.storage_handler: Optional[StorageHandler] = None
+        # 状态变量
+        self.is_uploading = False
+        self.upload_handler = UploadHandler()
 
-        # UI组件引用
-        self.ui_components: Dict[str, Any] = {}
+        # 创建界面
+        self.create_widgets()
 
-        self.setup_ui()
-        self.initialize_handlers()
-        self.refresh_storage_stats()
+        # 初始化检查
+        self.check_server_connection()
 
-    def setup_ui(self) -> None:
-        """设置用户界面."""
-        # 设置主布局
-        main_frame = WindowFactory.setup_main_layout(self.root)
-        main_frame.columnconfigure(0, weight=1)
+    def create_widgets(self):
+        """创建界面组件"""
+        # 主框架
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.grid(row=0, column=0, sticky=tk.W + tk.E + tk.N + tk.S)
+
+        # 配置网格权重
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
-        main_frame.columnconfigure(2, weight=1)
 
-        current_row = 0
+        row = 0
 
-        # 存储状态框架
-        storage_components = UIComponentFactory.create_storage_status_frame(main_frame)
-        storage_components['frame'].grid(row=current_row, column=0, columnspan=3, sticky="we", pady=(0, 10))
-        if 'refresh_button' in storage_components:
-            cast(Any, storage_components['refresh_button']).config(command=self.refresh_storage_stats)
-        self.ui_components.update(storage_components)
-        current_row += 1
+        # 标题
+        title_label = ttk.Label(main_frame, text="Omega更新服务器 - 简化上传工具",
+                               font=("Arial", 14, "bold"))
+        title_label.grid(row=row, column=0, columnspan=2, pady=(0, 20))
+        row += 1
 
-        # 包类型选择框架
-        package_frame = UIComponentFactory.create_package_type_frame(
-            main_frame, self.package_type, self.on_package_type_change
-        )
-        package_frame.grid(row=current_row, column=0, columnspan=3, sticky="we", pady=(0, 10))
-        current_row += 1
+        # 文件夹选择
+        folder_frame = ttk.LabelFrame(main_frame, text="📁 文件夹路径", padding="10")
+        folder_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(0, 10))
+        folder_frame.columnconfigure(0, weight=1)
 
-        # 版本信息框架
-        version_variables = {
-            'version': self.version,
-            'platform': self.platform,
-            'architecture': self.architecture,
-            'description': self.description
-        }
-        version_frame = UIComponentFactory.create_version_info_frame(main_frame, version_variables)
-        version_frame.grid(row=current_row, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        folder_entry = ttk.Entry(folder_frame, textvariable=self.folder_path_var, width=50)
+        folder_entry.grid(row=0, column=0, sticky=tk.W + tk.E, padx=(0, 10))
 
-        # 添加来源版本控件（增量包用）
-        self.from_version_label = ttk.Label(version_frame, text="来源版本:")
-        self.from_version_entry = ttk.Entry(version_frame, textvariable=self.from_version, width=20)
-        current_row += 1
+        folder_button = ttk.Button(folder_frame, text="选择文件夹...",
+                                  command=self.select_folder)
+        folder_button.grid(row=0, column=1)
 
-        # 文件夹选择框架
-        folder_components = UIComponentFactory.create_folder_selection_frame(
-            main_frame, self.selected_folder, self.select_folder, self.preview_folder
-        )
-        folder_components['frame'].grid(row=current_row, column=0, columnspan=3, sticky="we", pady=(0, 10))
-        self.ui_components.update(folder_components)
-        current_row += 1
+        preview_button = ttk.Button(folder_frame, text="预览内容",
+                                   command=self.preview_folder)
+        preview_button.grid(row=0, column=2, padx=(5, 0))
 
-        # 选项框架
-        options_variables = {
-            'is_stable': self.is_stable,
-            'is_critical': self.is_critical
-        }
-        options_frame = UIComponentFactory.create_options_frame(main_frame, options_variables)
-        options_frame.grid(row=current_row, column=0, columnspan=3, sticky="we", pady=(0, 10))
-        current_row += 1
+        row += 1
 
-        # 操作按钮框架
-        buttons_config = [
-            ("上传", self.upload_package),
-            ("清理存储", self.cleanup_storage),
-            ("查看包列表", self.view_packages),
-            ("存储管理", self.show_storage_management),
-            ("退出", self.root.quit)
+        # 版本类型选择
+        version_frame = ttk.LabelFrame(main_frame, text="🏷️ 版本类型选择", padding="15")
+        version_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(0, 15))
+        version_frame.columnconfigure(1, weight=1)
+
+        # 添加说明文字
+        info_label = ttk.Label(version_frame,
+                              text="选择版本类型，系统将自动覆盖同类型的旧版本：",
+                              font=("Arial", 9))
+        info_label.grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 10))
+
+        # 版本类型说明
+        version_types = [
+            ("stable", "🟢 稳定版 (Stable)", "生产环境使用，经过充分测试的正式版本"),
+            ("beta", "🟡 测试版 (Beta)", "预发布测试，功能基本稳定，等待最终验证"),
+            ("alpha", "🔴 新功能测试版 (Alpha)", "开发测试，包含最新功能，可能不稳定")
         ]
-        buttons_frame = UIComponentFactory.create_button_frame(main_frame, buttons_config)
-        buttons_frame.grid(row=current_row, column=0, columnspan=3, pady=(0, 10))
-        current_row += 1
 
-        # 进度和日志框架
-        progress_components = UIComponentFactory.create_progress_frame(main_frame)
-        progress_components['frame'].grid(row=current_row, column=0, columnspan=3, sticky="wens", pady=(0, 10))
-        main_frame.rowconfigure(current_row, weight=1)
-        self.ui_components.update(progress_components)
+        for i, (value, text, desc) in enumerate(version_types):
+            # 创建框架来包含单选按钮和描述
+            type_frame = ttk.Frame(version_frame)
+            type_frame.grid(row=i+1, column=0, columnspan=2, sticky=tk.W + tk.E, pady=3)
+            type_frame.columnconfigure(1, weight=1)
 
-    def initialize_handlers(self) -> None:
-        """初始化业务逻辑处理器."""
-        # 初始化日志管理器
-        self.log_manager = LogManager(self.ui_components['log_text'])
+            radio = ttk.Radiobutton(type_frame, text=text,
+                                   variable=self.version_type_var, value=value,
+                                   style="Large.TRadiobutton")
+            radio.grid(row=0, column=0, sticky=tk.W)
 
-        # 初始化业务处理器
-        self.upload_handler = UploadHandler(self.log_manager)
-        self.storage_handler = StorageHandler(self.log_manager)
+            desc_label = ttk.Label(type_frame, text=desc,
+                                  foreground="gray", font=("Arial", 8))
+            desc_label.grid(row=0, column=1, sticky=tk.W, padx=(20, 0))
 
-    def on_package_type_change(self) -> None:
-        """包类型改变事件."""
-        pkg_type = self.package_type.get()
+        row += 1
 
-        if pkg_type == "patch":
-            # 显示来源版本输入
-            self.from_version_label.grid(row=1, column=2, sticky="w", pady=(10, 0))
-            self.from_version_entry.grid(row=1, column=3, padx=(10, 20), pady=(10, 0), sticky="w")
-        else:
-            # 隐藏来源版本输入
-            self.from_version_label.grid_remove()
-            self.from_version_entry.grid_remove()
+        # 版本描述（可选）
+        desc_frame = ttk.LabelFrame(main_frame, text="📝 版本描述（可选）", padding="10")
+        desc_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(0, 10))
+        desc_frame.columnconfigure(0, weight=1)
 
-    def select_folder(self) -> None:
-        """选择文件夹."""
-        folder_path = filedialog.askdirectory(title="选择要上传的文件夹")
-        if folder_path:
-            self.selected_folder.set(folder_path)
-            self.analyze_folder(folder_path)
+        # 添加说明
+        desc_info = ttk.Label(desc_frame,
+                             text="可选填写本次更新的主要内容，留空将自动生成描述",
+                             font=("Arial", 8), foreground="gray")
+        desc_info.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
 
-    def analyze_folder(self, folder_path: str) -> None:
-        """分析文件夹内容."""
-        if self.upload_handler:
-            result_text = self.upload_handler.analyze_folder(folder_path)
-            self.ui_components['folder_info'].config(text=result_text)
+        desc_entry = ttk.Entry(desc_frame, textvariable=self.description_var, width=60)
+        desc_entry.grid(row=1, column=0, sticky=tk.W + tk.E)
 
-    def preview_folder(self) -> None:
-        """预览文件夹内容."""
-        if not self.upload_handler or not self.upload_handler.get_folder_analysis():
+        # 设置占位符
+        self.description_var.set("例如：修复了登录问题，优化了性能...")
+
+        row += 1
+
+        # 高级选项
+        advanced_frame = ttk.LabelFrame(main_frame, text="⚙️ 高级选项", padding="10")
+        advanced_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(0, 10))
+
+        ttk.Label(advanced_frame, text="平台:").grid(row=0, column=0, sticky=tk.W)
+        platform_combo = ttk.Combobox(advanced_frame, textvariable=self.platform_var,
+                                     values=["windows", "linux", "macos"],
+                                     state="readonly", width=15)
+        platform_combo.grid(row=0, column=1, padx=(5, 20))
+
+        ttk.Label(advanced_frame, text="架构:").grid(row=0, column=2, sticky=tk.W)
+        arch_combo = ttk.Combobox(advanced_frame, textvariable=self.architecture_var,
+                                 values=["x64", "x86", "arm64"],
+                                 state="readonly", width=15)
+        arch_combo.grid(row=0, column=3, padx=(5, 0))
+
+        row += 1
+
+        # 操作按钮
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=row, column=0, columnspan=2, pady=(20, 0))
+
+        self.upload_button = ttk.Button(button_frame, text="开始上传",
+                                       command=self.start_upload, style="Accent.TButton")
+        self.upload_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        cancel_button = ttk.Button(button_frame, text="取消",
+                                  command=self.cancel_upload)
+        cancel_button.pack(side=tk.LEFT)
+
+        row += 1
+
+        # 进度显示
+        progress_frame = ttk.LabelFrame(main_frame, text="📊 上传进度", padding="10")
+        progress_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(20, 0))
+        progress_frame.columnconfigure(0, weight=1)
+
+        self.progress_var = tk.StringVar(value="准备就绪")
+        self.progress_label = ttk.Label(progress_frame, textvariable=self.progress_var)
+        self.progress_label.grid(row=0, column=0, sticky=tk.W + tk.E)
+
+        self.progress_bar = ttk.Progressbar(progress_frame, mode='determinate')
+        self.progress_bar.grid(row=1, column=0, sticky=tk.W + tk.E, pady=(5, 0))
+
+        # 状态栏
+        self.status_var = tk.StringVar(value="就绪")
+        status_bar = ttk.Label(main_frame, textvariable=self.status_var,
+                              relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.grid(row=row+1, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(10, 0))
+
+    def select_folder(self):
+        """选择文件夹"""
+        folder = filedialog.askdirectory(title="选择要上传的文件夹")
+        if folder:
+            self.folder_path_var.set(folder)
+            self.status_var.set(f"已选择文件夹: {folder}")
+
+    def preview_folder(self):
+        """预览文件夹内容"""
+        folder_path = self.folder_path_var.get()
+        if not folder_path:
             messagebox.showwarning("警告", "请先选择文件夹")
             return
 
-        self._show_folder_preview()
+        try:
+            # 分析文件夹
+            analysis_text = self.upload_handler.analyze_folder(folder_path)
+            if analysis_text:
+                # 获取详细分析数据
+                analysis_data = self.upload_handler.get_folder_analysis()
+                if analysis_data:
+                    from tools.upload.upload_handler import FolderAnalyzer
+                    formatted_result = FolderAnalyzer.format_analysis_result(analysis_data)
+                else:
+                    formatted_result = analysis_text
 
-    def _show_folder_preview(self) -> None:
-        """显示文件夹预览窗口."""
-        if not self.upload_handler:
-            return
-        analysis = self.upload_handler.get_folder_analysis()
-        if not analysis:
-            return
+                # 显示预览窗口
+                preview_window = tk.Toplevel(self.root)
+                preview_window.title("文件夹内容预览")
+                preview_window.geometry("500x400")
 
-        # 创建预览窗口
-        preview_window = WindowFactory.create_dialog_window(
-            cast(Any, self.root), "文件夹内容预览", "600x500"
-        )
+                text_widget = tk.Text(preview_window, wrap=tk.WORD, padx=10, pady=10)
+                text_widget.pack(fill=tk.BOTH, expand=True)
 
-        # 创建文件树
-        columns = ("大小", "类型", "修改时间")
-        tree_components = UIComponentFactory.create_file_tree(cast(Any, preview_window), columns)
-        tree_components['tree'].pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0), pady=10)
-        tree_components['scrollbar'].pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 10), pady=10)
+                text_widget.insert(tk.END, formatted_result)
+                text_widget.config(state=tk.DISABLED)
 
-        # 填充文件信息
-        self._populate_preview_tree(cast(ttk.Treeview, tree_components['tree']), analysis['path'])
+            else:
+                messagebox.showerror("错误", "无法分析文件夹内容")
 
-        # 添加统计信息
-        stats_frame = ttk.Frame(preview_window)
-        stats_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        except Exception as e:
+            messagebox.showerror("错误", f"预览失败: {e}")
 
-        from tools.common.common_utils import FileUtils
-        stats_text = (f"总文件数: {analysis['total_files']}, "
-                      f"总大小: {FileUtils.format_file_size(analysis['total_size'])}")
-        ttk.Label(stats_frame, text=stats_text).pack()
-
-    def _populate_preview_tree(self, tree: ttk.Treeview, folder_path: str) -> None:
-        """填充预览树."""
-        from datetime import datetime
-
-        folder_path_obj = Path(folder_path)
-
-        def add_files_to_tree(parent_item: str, current_path: Path) -> None:
+    def check_server_connection(self):
+        """检查服务器连接"""
+        def check():
             try:
-                items = list(current_path.iterdir())
-                items.sort(key=lambda x: (x.is_file(), x.name.lower()))
+                response = requests.get(f"{self.server_url}/api/v2/status/simple", timeout=5)
+                if response.status_code == 200:
+                    self.status_var.set("服务器连接正常")
+                else:
+                    self.status_var.set("服务器连接异常")
+            except:
+                self.status_var.set("无法连接到服务器")
 
-                for item in items:
-                    relative_path = item.relative_to(folder_path_obj)
+        threading.Thread(target=check, daemon=True).start()
 
-                    if item.is_dir():
-                        # 添加目录
-                        dir_item = tree.insert(
-                            parent_item, tk.END, text=str(relative_path),
-                            values=("", "文件夹", "")
-                        )
-                        add_files_to_tree(dir_item, item)
-                    else:
-                        # 添加文件
-                        try:
-                            stat = item.stat()
-                            from tools.common.common_utils import FileUtils
-                            size = FileUtils.format_file_size(stat.st_size)
-                            mod_time = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
-                            file_type = item.suffix.lower() if item.suffix else "无扩展名"
+    def start_upload(self):
+        """开始上传"""
+        if self.is_uploading:
+            return
 
-                            tree.insert(
-                                parent_item, tk.END, text=str(relative_path),
-                                values=(size, file_type, mod_time)
-                            )
-                        except Exception:
-                            tree.insert(
-                                parent_item, tk.END, text=str(relative_path),
-                                values=("错误", "未知", "未知")
-                            )
-            except Exception as e:
-                if self.log_manager:
-                    self.log_manager.log_error(f"读取目录失败 {current_path}: {e}")
+        # 验证输入
+        folder_path = self.folder_path_var.get()
+        if not folder_path:
+            messagebox.showwarning("警告", "请选择要上传的文件夹")
+            return
 
-        # 开始填充
-        add_files_to_tree("", folder_path_obj)
+        if not Path(folder_path).exists():
+            messagebox.showerror("错误", "选择的文件夹不存在")
+            return
 
-    def upload_package(self) -> None:
-        """上传文件夹."""
-        # 准备上传配置
-        upload_config = {
-            'folder_path': self.selected_folder.get(),
-            'version': self.version.get().strip(),
-            'platform': self.platform.get(),
-            'architecture': self.architecture.get(),
-            'package_type': self.package_type.get(),
-            'description': self.description.get().strip(),
-            'is_stable': self.is_stable.get(),
-            'is_critical': self.is_critical.get(),
-            'from_version': self.from_version.get().strip() if self.package_type.get() == "patch" else ""
-        }
+        version_type = self.version_type_var.get()
+        platform = self.platform_var.get()
+        architecture = self.architecture_var.get()
+        description = self.description_var.get().strip()
+
+        # 自动生成描述（如果为空或是占位符）
+        if not description or description.startswith("例如："):
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            version_names = {
+                "stable": "稳定版",
+                "beta": "测试版",
+                "alpha": "新功能测试版"
+            }
+            description = f"{version_names.get(version_type, version_type)}更新 - {timestamp}"
 
         # 确认上传
-        if not messagebox.askyesno("确认", f"确定要上传版本 {upload_config['version']} 吗？"):
+        version_names = {
+            "stable": "🟢 稳定版 (Stable)",
+            "beta": "🟡 测试版 (Beta)",
+            "alpha": "🔴 新功能测试版 (Alpha)"
+        }
+
+        confirm_msg = f"""
+📤 确认上传信息：
+
+📁 文件夹: {Path(folder_path).name}
+🏷️  版本类型: {version_names.get(version_type, version_type)}
+💻 平台: {platform} ({architecture})
+📝 描述: {description}
+
+⚠️  重要提醒：
+• 将直接上传文件夹中的所有文件（保持原始结构）
+• 上传将自动覆盖同类型的现有版本
+• 旧版本将保存在历史记录中
+• 此操作不可撤销
+
+是否确认上传？
+        """
+
+        if not messagebox.askyesno("确认上传", confirm_msg.strip()):
             return
 
         # 开始上传
-        self.ui_components['progress']['value'] = 0
-        self.ui_components['status_label'].config(text="准备上传...")
+        self.is_uploading = True
+        self.upload_button.config(state="disabled")
+        self.progress_var.set("准备上传...")
+        self.progress_bar.config(value=0)
 
-        def progress_callback(progress: float, status: str) -> None:
-            self.root.after(0, lambda: self._update_upload_progress(progress, status))
-
-        def upload_complete_callback(success: bool) -> None:
-            self.root.after(0, lambda: self._upload_complete(success))
-
-        # 在新线程中执行上传
-        import threading
-
-        def upload_thread() -> None:
-            if self.upload_handler:
-                success = self.upload_handler.start_upload(upload_config, progress_callback)
-                upload_complete_callback(success)
-            else:
-                upload_complete_callback(False)
-
-        threading.Thread(target=upload_thread, daemon=True).start()
-
-    def _update_upload_progress(self, progress: float, status: str) -> None:
-        """更新上传进度."""
-        self.ui_components['progress']['value'] = progress
-        self.ui_components['status_label'].config(text=status)
-
-    def _upload_complete(self, success: bool) -> None:
-        """上传完成."""
-        self.ui_components['progress']['value'] = 100
-
-        if success:
-            self.ui_components['status_label'].config(text="上传完成")
-            messagebox.showinfo("成功", "文件上传成功！")
-        else:
-            self.ui_components['status_label'].config(text="上传失败")
-            messagebox.showerror("失败", "文件上传失败，请查看日志了解详情")
-
-        # 刷新存储统计
-        self.refresh_storage_stats()
-
-    def refresh_storage_stats(self) -> None:
-        """刷新存储统计."""
-        if self.storage_handler:
-            def callback(usage: float, status: str) -> None:
-                self.root.after(0, lambda: self._update_storage_ui(usage, status))
-
-            self.storage_handler.get_storage_stats(callback)
-
-    def _update_storage_ui(self, usage: float, status: str) -> None:
-        """更新存储UI."""
-        color_map = {
-            "healthy": "green",
-            "warning": "orange",
-            "critical": "red",
-            "error": "red"
-        }
-
-        self.ui_components['storage_progress']['value'] = usage
-        color = color_map.get(status, "gray")
-        self.ui_components['storage_label'].config(
-            text=f"存储使用情况: {usage:.1f}% ({status})",
-            foreground=color
+        # 在后台线程中执行上传
+        upload_thread = threading.Thread(
+            target=self._upload_worker,
+            args=(folder_path, version_type, platform, architecture, description),
+            daemon=True
         )
+        upload_thread.start()
 
-    def cleanup_storage(self) -> None:
-        """清理存储."""
-        if not messagebox.askyesno("确认", "确定要执行存储清理吗？这将删除旧的更新包。"):
-            return
-
-        if self.storage_handler:
-            def callback(success: bool, message: str) -> None:
-                self.root.after(0, lambda: self._cleanup_complete(success, message))
-
-            self.storage_handler.cleanup_storage(callback)
-
-    def _cleanup_complete(self, success: bool, message: str) -> None:
-        """清理完成."""
-        if success:
-            messagebox.showinfo("成功", message)
-        else:
-            messagebox.showerror("错误", message)
-
-        # 刷新存储统计
-        self.refresh_storage_stats()
-
-    def view_packages(self) -> None:
-        """查看包列表."""
-        if self.storage_handler:
-            def callback(packages: list) -> None:
-                self.root.after(0, lambda: self._show_packages_window(packages))
-
-            self.storage_handler.get_packages_list(
-                self.platform.get(), self.architecture.get(), 50, callback
+    def _upload_worker(self, folder_path: str, version_type: str,
+                      platform: str, architecture: str, description: str):
+        """上传工作线程"""
+        try:
+            # 使用新的简化上传API
+            success = self._upload_simplified(
+                folder_path, version_type, platform, architecture, description
             )
 
-    def _show_packages_window(self, packages: list) -> None:
-        """显示包列表窗口."""
-        packages_window = WindowFactory.create_dialog_window(
-            cast(Any, self.root), "包列表", "800x600"
-        )
+            if success:
+                self.root.after(0, lambda: self._upload_success())
+            else:
+                self.root.after(0, lambda: self._upload_failed("上传失败"))
 
-        # 创建包列表树
-        columns = ("版本", "类型", "平台", "架构", "大小", "状态", "创建时间")
-        tree_components = UIComponentFactory.create_file_tree(cast(Any, packages_window), columns)
-        tree_components['tree'].pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0), pady=10)
-        tree_components['scrollbar'].pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 10), pady=10)
+        except Exception as e:
+            self.root.after(0, lambda: self._upload_failed(str(e)))
 
-        # 填充包数据
-        self._populate_packages_tree(cast(ttk.Treeview, tree_components['tree']), packages)
+    def _upload_simplified(self, folder_path: str, version_type: str,
+                          platform: str, architecture: str, description: str) -> bool:
+        """使用简化API直接上传文件"""
+        try:
+            # 准备上传配置
+            upload_config = {
+                'version_type': version_type,
+                'platform': platform,
+                'architecture': architecture,
+                'description': description
+            }
 
-    def _populate_packages_tree(self, tree: ttk.Treeview, packages: list) -> None:
-        """填充包列表树."""
-        from datetime import datetime
-        from tools.common.common_utils import FileUtils
+            # 使用UploadHandler的直接上传功能
+            def progress_callback(progress, message):
+                self.root.after(0, lambda: self.progress_var.set(message))
+                self.root.after(0, lambda: self.progress_bar.config(value=progress))
 
-        for package in packages:
-            created_at = package.get('created_at', '')
-            if created_at:
-                try:
-                    # 格式化时间
-                    dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                    created_at = dt.strftime('%Y-%m-%d %H:%M:%S')
-                except Exception:
-                    pass
+            self.root.after(0, lambda: self.progress_var.set("开始上传文件..."))
+            self.root.after(0, lambda: self.progress_bar.config(value=0))
 
-            tree.insert("", tk.END, values=(
-                package.get('version', ''),
-                AppConstants.PACKAGE_TYPE_NAMES.get(package.get('package_type', ''), package.get('package_type', '')),
-                package.get('platform', ''),
-                package.get('architecture', ''),
-                FileUtils.format_file_size(package.get('total_size', 0)),
-                package.get('status', ''),
-                created_at
-            ))
+            # 直接上传文件夹
+            success = self.upload_handler.upload_folder_directly(
+                folder_path, upload_config, progress_callback
+            )
 
-    def show_storage_management(self) -> None:
-        """显示存储管理窗口."""
-        # 这里可以实现更复杂的存储管理界面
-        # 为了简化，暂时显示一个简单的信息窗口
-        messagebox.showinfo("存储管理", "存储管理功能正在开发中...")
+            self.root.after(0, lambda: self.progress_bar.config(value=100))
+
+            return success
+
+        except Exception as e:
+            print(f"上传异常: {e}")
+            return False
+
+    def _upload_success(self):
+        """上传成功回调"""
+        self.progress_var.set("上传完成！")
+        self.status_var.set("上传成功")
+        self.is_uploading = False
+        self.upload_button.config(state="normal")
+        messagebox.showinfo("成功", "版本上传成功！")
+
+    def _upload_failed(self, error_msg: str):
+        """上传失败回调"""
+        self.progress_var.set("上传失败")
+        self.status_var.set(f"上传失败: {error_msg}")
+        self.is_uploading = False
+        self.upload_button.config(state="normal")
+        self.progress_bar.config(value=0)
+        messagebox.showerror("失败", f"上传失败: {error_msg}")
+
+    def cancel_upload(self):
+        """取消上传"""
+        if self.is_uploading:
+            # 这里可以添加取消上传的逻辑
+            pass
+        self.root.quit()
 
 
-def main() -> None:
-    """主函数."""
-    root = WindowFactory.create_main_window(
-        AppConstants.UPLOAD_TOOL_TITLE,
-        AppConstants.UPLOAD_WINDOW_SIZE
-    )
-    UploadToolRefactored(root)
+def main():
+    """主函数"""
+    root = tk.Tk()
+
+    # 设置主题
+    try:
+        root.tk.call("source", "azure.tcl")
+        root.tk.call("set_theme", "light")
+    except:
+        pass  # 如果主题文件不存在，使用默认主题
+
+    app = SimplifiedUploadTool(root)
     root.mainloop()
 
 

@@ -390,3 +390,146 @@ class UploadHandler:
     def get_folder_analysis(self) -> Optional[Dict[str, Any]]:
         """获取文件夹分析结果"""
         return self.folder_analysis
+
+    def create_zip_file(self, folder_path: str,
+                       progress_callback: Optional[Callable] = None) -> Optional[str]:
+        """
+        创建ZIP文件（为简化上传工具提供的接口）
+
+        Args:
+            folder_path: 文件夹路径
+            progress_callback: 进度回调函数
+
+        Returns:
+            临时ZIP文件路径或None
+        """
+        if self.log_manager:
+            self.log_manager.log_info(f"开始创建ZIP文件: {folder_path}")
+
+        return self.zip_creator.create_zip_from_folder(folder_path, progress_callback)
+
+    def upload_folder_directly(self, folder_path: str, upload_config: Dict[str, Any],
+                              progress_callback: Optional[Callable] = None) -> bool:
+        """
+        直接上传文件夹中的所有文件（不创建ZIP）
+
+        Args:
+            folder_path: 文件夹路径
+            upload_config: 上传配置
+            progress_callback: 进度回调函数
+
+        Returns:
+            是否成功
+        """
+        try:
+            folder_path_obj = Path(folder_path)
+            if not folder_path_obj.exists() or not folder_path_obj.is_dir():
+                if self.log_manager:
+                    self.log_manager.log_error("文件夹不存在或不是有效目录")
+                return False
+
+            # 收集所有文件
+            all_files = []
+            for root, dirs, files in os.walk(folder_path_obj):
+                for file in files:
+                    file_path = Path(root) / file
+                    relative_path = file_path.relative_to(folder_path_obj)
+                    all_files.append((file_path, relative_path))
+
+            total_files = len(all_files)
+            if total_files == 0:
+                if self.log_manager:
+                    self.log_manager.log_warning("文件夹中没有文件")
+                return True
+
+            if self.log_manager:
+                self.log_manager.log_info(f"开始直接上传 {total_files} 个文件")
+
+            uploaded_files = 0
+            failed_files = 0
+
+            for i, (file_path, relative_path) in enumerate(all_files):
+                if self.file_uploader.is_cancelled:
+                    if self.log_manager:
+                        self.log_manager.log_info("上传被用户取消")
+                    break
+
+                try:
+                    # 更新进度
+                    progress = (i / total_files) * 100
+                    if progress_callback:
+                        progress_callback(progress, f"上传: {relative_path}")
+
+                    # 上传单个文件到简化API
+                    success = self._upload_single_file_to_simplified_api(
+                        file_path, relative_path, upload_config
+                    )
+
+                    if success:
+                        uploaded_files += 1
+                        if self.log_manager:
+                            self.log_manager.log_success(f"上传成功: {relative_path}")
+                    else:
+                        failed_files += 1
+                        if self.log_manager:
+                            self.log_manager.log_error(f"上传失败: {relative_path}")
+
+                except Exception as e:
+                    failed_files += 1
+                    if self.log_manager:
+                        self.log_manager.log_error(f"上传异常 {relative_path}: {e}")
+
+            # 最终进度更新
+            if progress_callback:
+                progress_callback(100, f"完成: {uploaded_files}/{total_files} 个文件")
+
+            # 返回结果
+            success_rate = uploaded_files / total_files if total_files > 0 else 0
+            if self.log_manager:
+                self.log_manager.log_info(f"上传完成: 成功 {uploaded_files}, 失败 {failed_files}, 成功率 {success_rate:.1%}")
+
+            return success_rate > 0.8  # 80%以上成功率认为成功
+
+        except Exception as e:
+            if self.log_manager:
+                self.log_manager.log_error(f"直接上传过程异常: {e}")
+            return False
+
+    def _upload_single_file_to_simplified_api(self, file_path: Path, relative_path: Path,
+                                            upload_config: Dict[str, Any]) -> bool:
+        """上传单个文件到简化API"""
+        try:
+            # 计算文件哈希
+            sha256_hash = hashlib.sha256()
+            with open(file_path, 'rb') as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    sha256_hash.update(chunk)
+            file_hash = sha256_hash.hexdigest()
+
+            # 准备上传数据
+            with open(file_path, 'rb') as f:
+                files = {'file': (file_path.name, f, 'application/octet-stream')}
+                data = {
+                    'version_type': upload_config['version_type'],
+                    'platform': upload_config['platform'],
+                    'architecture': upload_config['architecture'],
+                    'relative_path': str(relative_path).replace('\\', '/'),
+                    'description': upload_config['description'],
+                    'api_key': get_api_key(),
+                    'file_hash': file_hash
+                }
+
+                # 发送请求到简化API
+                response = requests.post(
+                    f"{get_server_url()}/api/v2/upload/simple/file",
+                    files=files,
+                    data=data,
+                    timeout=AppConstants.REQUEST_TIMEOUT * 3
+                )
+
+                return response.status_code == 200
+
+        except Exception as e:
+            if self.log_manager:
+                self.log_manager.log_error(f"单文件上传失败 {relative_path}: {e}")
+            return False

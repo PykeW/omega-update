@@ -26,6 +26,7 @@ from server.enhanced_database import (
     PackageType, PackageStatus, SingleFile
 )
 from server.storage_manager import storage_manager
+from server.simplified_api import router as simplified_router
 from sqlalchemy.orm import Session
 
 # 初始化配置
@@ -79,6 +80,9 @@ async def health_check():
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "2.0.0"
     }
+
+# 添加简化API路由
+app.include_router(simplified_router)
 
 # 配置静态文件服务
 app.mount("/static", StaticFiles(directory=str(config.STATIC_DIR)), name="static")

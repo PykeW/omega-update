@@ -64,11 +64,48 @@ class SimplifiedVersion(Base):
             'platform': self.platform,
             'architecture': self.architecture,
             'description': self.description,
-            'upload_date': self.upload_date.isoformat() if self.upload_date else None,
+            'upload_date': self.upload_date.isoformat() if self.upload_date is not None else None,
             'file_path': self.file_path,
             'file_size': self.file_size,
             'file_hash': self.file_hash,
             'uploader_info': self.uploader_info
+        }
+
+
+class SimplifiedVersionFile(Base):
+    """简化版本文件表 - 跟踪版本中的单个文件"""
+    __tablename__ = 'simplified_version_files'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    version_type = Column(String(20), nullable=False)  # stable, beta, alpha
+    platform = Column(String(50), nullable=False)     # windows, linux, macos
+    architecture = Column(String(20), nullable=False) # x64, x86, arm64
+    relative_path = Column(String(1000), nullable=False)  # 文件在版本中的相对路径
+    file_name = Column(String(255), nullable=False)   # 文件名
+    file_size = Column(BigInteger, nullable=False)    # 文件大小
+    file_hash = Column(String(64), nullable=False)    # 文件SHA256哈希
+    upload_date = Column(DateTime, default=func.now())
+    storage_path = Column(String(1000), nullable=False)  # 服务器上的实际存储路径
+
+    # 确保每个版本类型/平台/架构/相对路径组合唯一
+    __table_args__ = (
+        UniqueConstraint('version_type', 'platform', 'architecture', 'relative_path',
+                        name='uq_version_file_path'),
+    )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        return {
+            'id': self.id,
+            'version_type': self.version_type,
+            'platform': self.platform,
+            'architecture': self.architecture,
+            'relative_path': self.relative_path,
+            'file_name': self.file_name,
+            'file_size': self.file_size,
+            'file_hash': self.file_hash,
+            'upload_date': self.upload_date.isoformat() if self.upload_date is not None else None,
+            'storage_path': self.storage_path
         }
 
 
@@ -96,12 +133,12 @@ class VersionHistory(Base):
             'platform': self.platform,
             'architecture': self.architecture,
             'description': self.description,
-            'upload_date': self.upload_date.isoformat() if self.upload_date else None,
+            'upload_date': self.upload_date.isoformat() if self.upload_date is not None else None,
             'file_path': self.file_path,
             'file_size': self.file_size,
             'file_hash': self.file_hash,
             'action': self.action,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None
         }
 
 
@@ -188,6 +225,88 @@ class SimplifiedVersionManager:
         self.db.commit()
         return new_version
 
+    def upload_file(self, version_type: str, platform: str, architecture: str,
+                   relative_path: str, file_name: str, file_size: int, file_hash: str,
+                   storage_path: str) -> SimplifiedVersionFile:
+        """
+        上传单个文件到版本系统
+
+        Args:
+            version_type: 版本类型 (stable, beta, alpha)
+            platform: 平台
+            architecture: 架构
+            relative_path: 文件相对路径
+            file_name: 文件名
+            file_size: 文件大小
+            file_hash: 文件哈希
+            storage_path: 服务器存储路径
+
+        Returns:
+            新创建的文件记录
+        """
+        # 检查是否存在同路径文件
+        existing_file = self.db.query(SimplifiedVersionFile).filter(
+            SimplifiedVersionFile.version_type == version_type,
+            SimplifiedVersionFile.platform == platform,
+            SimplifiedVersionFile.architecture == architecture,
+            SimplifiedVersionFile.relative_path == relative_path
+        ).first()
+
+        # 如果存在旧文件，删除它
+        if existing_file:
+            self.db.delete(existing_file)
+
+        # 创建新文件记录
+        new_file = SimplifiedVersionFile(
+            version_type=version_type,
+            platform=platform,
+            architecture=architecture,
+            relative_path=relative_path,
+            file_name=file_name,
+            file_size=file_size,
+            file_hash=file_hash,
+            storage_path=storage_path
+        )
+
+        self.db.add(new_file)
+        self.db.commit()
+
+        return new_file
+
+    def clear_version_files(self, version_type: str, platform: str, architecture: str):
+        """
+        清除指定版本的所有文件记录
+
+        Args:
+            version_type: 版本类型
+            platform: 平台
+            architecture: 架构
+        """
+        self.db.query(SimplifiedVersionFile).filter(
+            SimplifiedVersionFile.version_type == version_type,
+            SimplifiedVersionFile.platform == platform,
+            SimplifiedVersionFile.architecture == architecture
+        ).delete()
+        self.db.commit()
+
+    def get_version_files(self, version_type: str, platform: str, architecture: str):
+        """
+        获取指定版本的所有文件
+
+        Args:
+            version_type: 版本类型
+            platform: 平台
+            architecture: 架构
+
+        Returns:
+            文件列表
+        """
+        return self.db.query(SimplifiedVersionFile).filter(
+            SimplifiedVersionFile.version_type == version_type,
+            SimplifiedVersionFile.platform == platform,
+            SimplifiedVersionFile.architecture == architecture
+        ).all()
+
     def get_versions(self, platform: str = "windows",
                     architecture: str = "x64") -> Dict[str, Optional[SimplifiedVersion]]:
         """
@@ -205,7 +324,7 @@ class SimplifiedVersionManager:
             SimplifiedVersion.architecture == architecture
         ).all()
 
-        result = {
+        result: Dict[str, Optional[SimplifiedVersion]] = {
             'stable': None,
             'beta': None,
             'alpha': None

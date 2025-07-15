@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 """
-Omega下载工具启动脚本
+启动简化下载工具
 """
 
 import sys
-import os
 import tkinter as tk
 from pathlib import Path
 
-# 添加项目根目录到 Python 路径
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+# 添加项目路径
+sys.path.append(str(Path(__file__).parent))
 
-# 设置工作目录为项目根目录
-os.chdir(project_root)
+from tools.download.download_tool import SimplifiedDownloadTool
+
+
+def main():
+    """主函数"""
+    print("启动 Omega 简化下载工具...")
+    
+    root = tk.Tk()
+    
+    # 设置主题
+    try:
+        root.tk.call("source", "azure.tcl")
+        root.tk.call("set_theme", "light")
+    except:
+        pass  # 如果主题文件不存在，使用默认主题
+    
+    app = SimplifiedDownloadTool(root)
+    root.mainloop()
+
 
 if __name__ == "__main__":
-    # 导入并启动下载工具
-    from tools.download.download_tool import DownloadToolRefactored
-
-    print("启动 Omega 下载工具...")
-
-    root = tk.Tk()
-    DownloadToolRefactored(root)
-    root.mainloop()
+    main()

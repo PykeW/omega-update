@@ -1,0 +1,18 @@
+{
+  "migration_date": "2025-07-14T18:34:49.790024",
+  "operation": "set_cloud_base_version",
+  "analysis": {
+    "total_packages": 0,
+    "platforms": {},
+    "version_patterns": {},
+    "recommendations": [
+      "无现有版本，可以直接开始使用简化系统"
+    ]
+  },
+  "success": false,
+  "next_steps": [
+    "重启服务器启用新API",
+    "使用简化上传工具上传新版本",
+    "测试三版本类型系统"
+  ]
+}

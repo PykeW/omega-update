@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 """
-Omega更新服务器主程序
+Omega更新服务器主程序 - 遗留版本
 基于FastAPI的更新服务器
+
+⚠️ 警告：此文件已弃用！
+请使用 start_integrated_server.py 作为主服务器文件。
+此文件仅用于部署参考，不应在生产环境中使用。
 """
+
+# 此文件已弃用，请使用 start_integrated_server.py
+import sys
+print("⚠️ 警告：deployment/main.py 已弃用！")
+print("请使用 start_integrated_server.py 作为主服务器文件。")
+sys.exit(1)
 
 import os
 import sys
@@ -21,8 +31,11 @@ import json
 sys.path.append(str(Path(__file__).parent.parent))
 
 from server_config import ServerConfig
-from update_server.models.database import init_database, get_db, Version, VersionFile, UpdatePackage
 from sqlalchemy.orm import Session
+# 注意：这是一个遗留的部署文件，使用旧的数据库模型
+# 主服务器文件是 start_integrated_server.py
+from server.simplified_database import SimplifiedVersion, SimplifiedVersionFile, SimplifiedVersionManager
+from server.enhanced_database import init_database, get_db, Version, Package as VersionFile, PackageType
 
 # 初始化配置
 config = ServerConfig()
@@ -100,19 +113,19 @@ async def check_version(
             Version.architecture == arch,
             Version.is_stable == True
         ).order_by(Version.release_date.desc()).first()
-        
+
         if not latest_version:
             raise HTTPException(status_code=404, detail="没有找到可用版本")
-        
+
         # 简单的版本比较 (实际应用中应该使用更复杂的版本比较逻辑)
         has_update = current_version != latest_version.version
-        
+
         response = {
             "has_update": has_update,
             "current_version": current_version,
             "latest_version": latest_version.version
         }
-        
+
         if has_update:
             response["update_info"] = {
                 "version": latest_version.version,
@@ -122,10 +135,10 @@ async def check_version(
                 "file_size": latest_version.total_size,
                 "download_url": f"/api/v1/download/version/{latest_version.id}"
             }
-        
+
         logger.info(f"版本检查: {current_version} -> {latest_version.version}, 有更新: {has_update}")
         return response
-        
+
     except Exception as e:
         logger.error(f"版本检查失败: {e}")
         raise HTTPException(status_code=500, detail=f"版本检查失败: {str(e)}")
@@ -143,7 +156,7 @@ async def list_versions(
             Version.platform == platform,
             Version.architecture == arch
         ).order_by(Version.release_date.desc()).limit(limit).all()
-        
+
         return [
             {
                 "version": v.version,
@@ -155,7 +168,7 @@ async def list_versions(
             }
             for v in versions
         ]
-        
+
     except Exception as e:
         logger.error(f"获取版本列表失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取版本列表失败: {str(e)}")
@@ -176,27 +189,31 @@ async def upload_version(
     # 验证API密钥
     if api_key != config.API_KEY:
         raise HTTPException(status_code=401, detail="无效的API密钥")
-    
+
     try:
+        # 检查文件名
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="文件名不能为空")
+
         # 检查文件扩展名
         file_ext = Path(file.filename).suffix.lower()
         if file_ext not in config.ALLOWED_EXTENSIONS:
             raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file_ext}")
-        
+
         # 创建版本目录
         version_dir = config.UPLOAD_DIR / "versions" / version
         version_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # 保存文件
         file_path = version_dir / file.filename
         content = await file.read()
-        
+
         with open(file_path, "wb") as f:
             f.write(content)
-        
+
         # 计算文件哈希
         sha256_hash = hashlib.sha256(content).hexdigest()
-        
+
         # 保存到数据库
         db_version = Version(
             version=version,
@@ -208,25 +225,25 @@ async def upload_version(
             total_size=len(content),
             file_count=1
         )
-        
+
         db.add(db_version)
         db.commit()
         db.refresh(db_version)
-        
-        # 保存文件信息
+
+        # 保存文件信息 (使用Package模型作为文件记录)
         db_file = VersionFile(
             version_id=db_version.id,
-            file_path=file.filename,
-            file_name=file.filename,
-            file_size=len(content),
+            package_type=PackageType.FULL,
+            package_name=file.filename,
+            package_size=len(content),
             sha256_hash=sha256_hash,
             storage_path=str(file_path),
             download_url=f"/downloads/versions/{version}/{file.filename}"
         )
-        
+
         db.add(db_file)
         db.commit()
-        
+
         logger.info(f"版本上传成功: {version}")
         return {
             "message": "版本上传成功",
@@ -234,7 +251,7 @@ async def upload_version(
             "file_size": len(content),
             "sha256": sha256_hash
         }
-        
+
     except Exception as e:
         logger.error(f"版本上传失败: {e}")
         raise HTTPException(status_code=500, detail=f"版本上传失败: {str(e)}")
@@ -246,21 +263,21 @@ async def download_version(version_id: int, db: Session = Depends(get_db)):
         version = db.query(Version).filter(Version.id == version_id).first()
         if not version:
             raise HTTPException(status_code=404, detail="版本不存在")
-        
+
         # 获取主文件
         main_file = db.query(VersionFile).filter(
             VersionFile.version_id == version_id
         ).first()
-        
-        if not main_file or not Path(main_file.storage_path).exists():
+
+        if not main_file or not Path(str(main_file.storage_path)).exists():
             raise HTTPException(status_code=404, detail="文件不存在")
-        
+
         return FileResponse(
-            path=main_file.storage_path,
-            filename=main_file.file_name,
+            path=str(main_file.storage_path),
+            filename=str(main_file.package_name),
             media_type='application/octet-stream'
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -273,14 +290,14 @@ async def get_stats(db: Session = Depends(get_db)):
     try:
         total_versions = db.query(Version).count()
         stable_versions = db.query(Version).filter(Version.is_stable == True).count()
-        
+
         return {
             "total_versions": total_versions,
             "stable_versions": stable_versions,
             "server_status": "running",
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"获取统计信息失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取统计信息失败: {str(e)}")

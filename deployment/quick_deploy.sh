@@ -48,7 +48,7 @@ show_banner() {
 
 check_prerequisites() {
     log_step "检查部署前提条件..."
-    
+
     # 检查必要命令
     local commands=("ssh" "scp" "curl")
     for cmd in "${commands[@]}"; do
@@ -57,7 +57,7 @@ check_prerequisites() {
             exit 1
         fi
     done
-    
+
     # 检查SSH连接
     log_info "测试SSH连接..."
     if ! ssh -o ConnectTimeout=10 -o BatchMode=yes "$SERVER_USER@$SERVER_IP" exit 2>/dev/null; then
@@ -68,9 +68,9 @@ check_prerequisites() {
         echo "  3. 服务器防火墙允许SSH连接"
         exit 1
     fi
-    
+
     log_info "SSH连接测试成功"
-    
+
     # 检查本地文件
     local required_files=(
         "deployment/deploy.sh"
@@ -79,35 +79,36 @@ check_prerequisites() {
         "deployment/nginx.conf"
         "deployment/omega-update-server.service"
         "update_server/models/database.py"
+        "update_server/models/database.py"
     )
-    
+
     for file in "${required_files[@]}"; do
         if [ ! -f "$LOCAL_PROJECT_DIR/$file" ]; then
             log_error "缺少必要文件: $file"
             exit 1
         fi
     done
-    
+
     log_info "本地文件检查完成"
 }
 
 upload_files() {
     log_step "上传文件到服务器..."
-    
+
     # 创建远程临时目录
     ssh "$SERVER_USER@$SERVER_IP" "rm -rf /tmp/omega-deployment && mkdir -p /tmp/omega-deployment"
-    
+
     # 上传部署文件
     log_info "上传部署配置文件..."
     scp -q "$DEPLOYMENT_DIR"/*.{py,sh,conf,service} "$SERVER_USER@$SERVER_IP:/tmp/omega-deployment/" 2>/dev/null || true
     scp -q "$DEPLOYMENT_DIR"/README.md "$SERVER_USER@$SERVER_IP:/tmp/omega-deployment/" 2>/dev/null || true
-    
+
     # 上传项目文件
     log_info "上传项目源码..."
     if [ -d "$LOCAL_PROJECT_DIR/update_server" ]; then
         scp -q -r "$LOCAL_PROJECT_DIR/update_server" "$SERVER_USER@$SERVER_IP:/tmp/omega-deployment/"
     fi
-    
+
     # 上传其他必要文件
     local project_files=(
         "generate_update_package.py"
@@ -115,35 +116,35 @@ upload_files() {
         "version_analyzer.py"
         "PROJECT_STRUCTURE.md"
     )
-    
+
     for file in "${project_files[@]}"; do
         if [ -f "$LOCAL_PROJECT_DIR/$file" ]; then
             scp -q "$LOCAL_PROJECT_DIR/$file" "$SERVER_USER@$SERVER_IP:/tmp/omega-deployment/"
         fi
     done
-    
+
     # 设置文件权限
     ssh "$SERVER_USER@$SERVER_IP" "chmod +x /tmp/omega-deployment/*.sh"
-    
+
     log_info "文件上传完成"
 }
 
 deploy_server() {
     log_step "在服务器上执行部署..."
-    
+
     # 执行部署脚本
     ssh "$SERVER_USER@$SERVER_IP" "cd /tmp/omega-deployment && ./deploy.sh install"
-    
+
     log_info "服务器部署完成"
 }
 
 verify_deployment() {
     log_step "验证部署结果..."
-    
+
     # 等待服务启动
     log_info "等待服务启动..."
     sleep 10
-    
+
     # 检查服务状态
     log_info "检查服务状态..."
     if ssh "$SERVER_USER@$SERVER_IP" "systemctl is-active --quiet omega-update-server"; then
@@ -152,19 +153,19 @@ verify_deployment() {
         log_error "❌ Omega更新服务启动失败"
         return 1
     fi
-    
+
     if ssh "$SERVER_USER@$SERVER_IP" "systemctl is-active --quiet nginx"; then
         log_info "✅ Nginx服务运行正常"
     else
         log_error "❌ Nginx服务启动失败"
         return 1
     fi
-    
+
     # 测试HTTP接口
     log_info "测试HTTP接口..."
     local max_retries=5
     local retry=0
-    
+
     while [ $retry -lt $max_retries ]; do
         if curl -s --connect-timeout 10 "http://$SERVER_IP/health" > /dev/null; then
             log_info "✅ HTTP接口响应正常"
@@ -180,7 +181,7 @@ verify_deployment() {
             fi
         fi
     done
-    
+
     # 测试API接口
     log_info "测试API接口..."
     if curl -s "http://$SERVER_IP/api/v1/stats" | grep -q "total_versions"; then
@@ -188,13 +189,13 @@ verify_deployment() {
     else
         log_warn "⚠️  API接口可能存在问题"
     fi
-    
+
     log_info "部署验证完成"
 }
 
 show_deployment_info() {
     log_step "部署完成信息"
-    
+
     echo
     echo "🎉 Omega更新服务器部署成功！"
     echo
@@ -244,7 +245,7 @@ main() {
     local upload_only=false
     local deploy_only=false
     local verify_only=false
-    
+
     # 解析命令行参数
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -275,9 +276,9 @@ main() {
                 ;;
         esac
     done
-    
+
     show_banner
-    
+
     # 执行相应操作
     if [ "$check_only" = true ]; then
         check_prerequisites

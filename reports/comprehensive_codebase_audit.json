@@ -1,0 +1,1500 @@
+{
+  "audit_date": "2025-07-14T19:22:08.803603",
+  "project_status": "simplified_system_active",
+  "audit_results": {
+    "obsolete_scripts": [
+      {
+        "file": "scripts\\demo_simplified_workflow.py",
+        "size": 12198,
+        "purpose": "demonstration",
+        "imports": [
+          "sys",
+          "tempfile",
+          "json",
+          "pathlib",
+          "datetime"
+        ],
+        "last_modified": "2025-07-14T18:33:02.287675"
+      },
+      {
+        "file": "scripts\\fix_upload_issues.py",
+        "size": 5622,
+        "purpose": "bug_fix",
+        "imports": [
+          "json",
+          "sys",
+          "requests",
+          "pathlib"
+        ],
+        "last_modified": "2025-07-14T18:02:43.340235"
+      }
+    ],
+    "redundant_docs": [],
+    "legacy_configs": [],
+    "test_files": [],
+    "temporary_files": [],
+    "reports_analysis": {
+      "exists": true,
+      "total_files": 7,
+      "total_size": 4854,
+      "reports": [
+        {
+          "file": "cleanup_verification_report.json",
+          "size": 388,
+          "type": "cleanup",
+          "date": "2025-07-14T18:45:00",
+          "purpose": "记录系统清理过程"
+        },
+        {
+          "file": "cloud_base_version_summary.json",
+          "size": 458,
+          "type": "operational",
+          "date": "unknown",
+          "purpose": "未知用途"
+        },
+        {
+          "file": "final_cleanup_report.json",
+          "size": 460,
+          "type": "cleanup",
+          "date": "unknown",
+          "purpose": "记录系统清理过程"
+        },
+        {
+          "file": "final_verification_report.json",
+          "size": 577,
+          "type": "verification",
+          "date": "2025-07-14T18:30:00",
+          "purpose": "记录系统验证结果"
+        },
+        {
+          "file": "legacy_cleanup_report.json",
+          "size": 1910,
+          "type": "cleanup",
+          "date": "2025-07-14T18:41:50.128266",
+          "purpose": "记录系统清理过程"
+        },
+        {
+          "file": "legacy_import_fix_test.json",
+          "size": 677,
+          "type": "testing",
+          "date": "unknown",
+          "purpose": "记录遗留系统处理"
+        },
+        {
+          "file": "migration_report.json",
+          "size": 384,
+          "type": "migration",
+          "date": "unknown",
+          "purpose": "记录数据迁移过程"
+        }
+      ],
+      "archival_candidates": [
+        {
+          "file": "cleanup_verification_report.json",
+          "size": 388,
+          "type": "cleanup",
+          "date": "2025-07-14T18:45:00",
+          "purpose": "记录系统清理过程"
+        },
+        {
+          "file": "final_cleanup_report.json",
+          "size": 460,
+          "type": "cleanup",
+          "date": "unknown",
+          "purpose": "记录系统清理过程"
+        },
+        {
+          "file": "final_verification_report.json",
+          "size": 577,
+          "type": "verification",
+          "date": "2025-07-14T18:30:00",
+          "purpose": "记录系统验证结果"
+        },
+        {
+          "file": "legacy_cleanup_report.json",
+          "size": 1910,
+          "type": "cleanup",
+          "date": "2025-07-14T18:41:50.128266",
+          "purpose": "记录系统清理过程"
+        },
+        {
+          "file": "migration_report.json",
+          "size": 384,
+          "type": "migration",
+          "date": "unknown",
+          "purpose": "记录数据迁移过程"
+        }
+      ]
+    },
+    "config_analysis": {
+      "exists": true,
+      "total_files": 5,
+      "configs": [
+        {
+          "file": "batch_config_sample.json",
+          "size": 919,
+          "type": ".json",
+          "purpose": "批处理配置示例",
+          "essential": false,
+          "last_modified": "2025-07-14T14:41:26.443631"
+        },
+        {
+          "file": "config.json",
+          "size": 745,
+          "type": ".json",
+          "purpose": "主配置文件",
+          "essential": true,
+          "last_modified": "2025-07-14T18:02:51.662422"
+        },
+        {
+          "file": "file_filter.json",
+          "size": 346,
+          "type": ".json",
+          "purpose": "文件过滤配置",
+          "essential": true,
+          "last_modified": "2025-07-14T18:02:51.672420"
+        },
+        {
+          "file": "upload_config.json",
+          "size": 529,
+          "type": ".json",
+          "purpose": "主配置文件",
+          "essential": true,
+          "last_modified": "2025-07-14T18:02:51.671421"
+        },
+        {
+          "file": "upload_config_sample.json",
+          "size": 371,
+          "type": ".json",
+          "purpose": "上传配置示例",
+          "essential": false,
+          "last_modified": "2025-07-14T14:41:26.445632"
+        }
+      ],
+      "essential_configs": [
+        {
+          "file": "config.json",
+          "size": 745,
+          "type": ".json",
+          "purpose": "主配置文件",
+          "essential": true,
+          "last_modified": "2025-07-14T18:02:51.662422"
+        },
+        {
+          "file": "file_filter.json",
+          "size": 346,
+          "type": ".json",
+          "purpose": "文件过滤配置",
+          "essential": true,
+          "last_modified": "2025-07-14T18:02:51.672420"
+        },
+        {
+          "file": "upload_config.json",
+          "size": 529,
+          "type": ".json",
+          "purpose": "主配置文件",
+          "essential": true,
+          "last_modified": "2025-07-14T18:02:51.671421"
+        }
+      ],
+      "optional_configs": [
+        {
+          "file": "batch_config_sample.json",
+          "size": 919,
+          "type": ".json",
+          "purpose": "批处理配置示例",
+          "essential": false,
+          "last_modified": "2025-07-14T14:41:26.443631"
+        },
+        {
+          "file": "upload_config_sample.json",
+          "size": 371,
+          "type": ".json",
+          "purpose": "上传配置示例",
+          "essential": false,
+          "last_modified": "2025-07-14T14:41:26.445632"
+        }
+      ]
+    },
+    "recommendations": {
+      "safe_to_delete": [
+        {
+          "file": "scripts\\demo_simplified_workflow.py",
+          "reason": "演示或临时脚本，已完成使命",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\fix_upload_issues.py",
+          "reason": "演示或临时脚本，已完成使命",
+          "type": "script"
+        }
+      ],
+      "archive_candidates": [
+        {
+          "file": "scripts\\cleanup_legacy_system.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\final_cleanup_check.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\integrate_simplified_api.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\migrate_to_simplified_system.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\remove_legacy_files.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\test_legacy_import_fix.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "scripts\\verify_cleanup_success.py",
+          "reason": "迁移脚本，保留作为历史记录",
+          "type": "script"
+        },
+        {
+          "file": "reports/cleanup_verification_report.json",
+          "reason": "记录系统清理过程 - 可归档",
+          "type": "report"
+        },
+        {
+          "file": "reports/final_cleanup_report.json",
+          "reason": "记录系统清理过程 - 可归档",
+          "type": "report"
+        },
+        {
+          "file": "reports/final_verification_report.json",
+          "reason": "记录系统验证结果 - 可归档",
+          "type": "report"
+        },
+        {
+          "file": "reports/legacy_cleanup_report.json",
+          "reason": "记录系统清理过程 - 可归档",
+          "type": "report"
+        },
+        {
+          "file": "reports/migration_report.json",
+          "reason": "记录数据迁移过程 - 可归档",
+          "type": "report"
+        }
+      ],
+      "consolidation_opportunities": [
+        {
+          "files": [
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "DEPLOYMENT_GUIDE.md",
+            "DOCUMENTATION_UPDATE_SUMMARY.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "PROJECT_SETUP_SUMMARY.md",
+            "PROJECT_STRUCTURE.md",
+            "README.md",
+            "REMOTE_SERVER_SETUP.md",
+            "SOLUTION_SUMMARY.md",
+            "UPLOAD_TOOL_FIXES.md",
+            "docs\\API_DOCUMENTATION.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\DEVELOPMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+            "docs\\TROUBLESHOOTING.md",
+            "deployment\\DEPLOYMENT_CHECKLIST.md",
+            "deployment\\GUI_USAGE.md",
+            "deployment\\MANUAL_UPLOAD.md",
+            "deployment\\QUICK_START.md",
+            "deployment\\README.md",
+            "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+            "deployment\\WINDOWS_DEPLOY.md"
+          ],
+          "reason": "多个文档涉及相同主题: deployment",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "DEPLOYMENT_GUIDE.md",
+            "DOCUMENTATION_UPDATE_SUMMARY.md",
+            "FINAL_CLEANUP_COMPLETE.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "PROJECT_SETUP_SUMMARY.md",
+            "PROJECT_STRUCTURE.md",
+            "README.md",
+            "REMOTE_SERVER_SETUP.md",
+            "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+            "SOLUTION_SUMMARY.md",
+            "SYSTEM_READY.md",
+            "TOOL_COMPARISON.md",
+            "UPLOAD_TOOL_FIXES.md",
+            "docs\\API_DOCUMENTATION.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\DEVELOPMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+            "docs\\TROUBLESHOOTING.md",
+            "deployment\\DEPLOYMENT_CHECKLIST.md",
+            "deployment\\GUI_USAGE.md",
+            "deployment\\MANUAL_UPLOAD.md",
+            "deployment\\QUICK_START.md",
+            "deployment\\README.md",
+            "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+            "deployment\\WINDOWS_DEPLOY.md"
+          ],
+          "reason": "多个文档涉及相同主题: usage",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "DEPLOYMENT_GUIDE.md",
+            "DOCUMENTATION_UPDATE_SUMMARY.md",
+            "FINAL_CLEANUP_COMPLETE.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "PROJECT_SETUP_SUMMARY.md",
+            "PROJECT_STRUCTURE.md",
+            "README.md",
+            "REMOTE_SERVER_SETUP.md",
+            "SOLUTION_SUMMARY.md",
+            "SYSTEM_READY.md",
+            "UPLOAD_TOOL_FIXES.md",
+            "docs\\API_DOCUMENTATION.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\DEVELOPMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+            "docs\\TROUBLESHOOTING.md",
+            "deployment\\DEPLOYMENT_CHECKLIST.md",
+            "deployment\\GUI_USAGE.md",
+            "deployment\\QUICK_START.md",
+            "deployment\\README.md",
+            "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+            "deployment\\WINDOWS_DEPLOY.md"
+          ],
+          "reason": "多个文档涉及相同主题: api",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "DEPLOYMENT_GUIDE.md",
+            "DOCUMENTATION_UPDATE_SUMMARY.md",
+            "FINAL_CLEANUP_COMPLETE.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "PROJECT_SETUP_SUMMARY.md",
+            "PROJECT_STRUCTURE.md",
+            "README.md",
+            "REMOTE_SERVER_SETUP.md",
+            "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+            "SOLUTION_SUMMARY.md",
+            "TOOL_COMPARISON.md",
+            "UPLOAD_TOOL_FIXES.md",
+            "docs\\API_DOCUMENTATION.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+            "docs\\TROUBLESHOOTING.md",
+            "deployment\\DEPLOYMENT_CHECKLIST.md",
+            "deployment\\GUI_USAGE.md",
+            "deployment\\MANUAL_UPLOAD.md",
+            "deployment\\QUICK_START.md",
+            "deployment\\README.md",
+            "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+            "deployment\\WINDOWS_DEPLOY.md"
+          ],
+          "reason": "多个文档涉及相同主题: troubleshooting",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "DEPLOYMENT_GUIDE.md",
+            "DOCUMENTATION_UPDATE_SUMMARY.md",
+            "FINAL_CLEANUP_COMPLETE.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "PROJECT_SETUP_SUMMARY.md",
+            "PROJECT_STRUCTURE.md",
+            "README.md",
+            "REMOTE_SERVER_SETUP.md",
+            "SOLUTION_SUMMARY.md",
+            "TOOL_COMPARISON.md",
+            "docs\\API_DOCUMENTATION.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\DEVELOPMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+            "docs\\TROUBLESHOOTING.md",
+            "deployment\\DEPLOYMENT_CHECKLIST.md",
+            "deployment\\GUI_USAGE.md",
+            "deployment\\MANUAL_UPLOAD.md",
+            "deployment\\QUICK_START.md",
+            "deployment\\README.md",
+            "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+            "deployment\\WINDOWS_DEPLOY.md"
+          ],
+          "reason": "多个文档涉及相同主题: setup",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "CHANGELOG.md",
+            "DEPLOYMENT_GUIDE.md",
+            "FINAL_CLEANUP_COMPLETE.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "README.md",
+            "SYSTEM_READY.md",
+            "docs\\API_DOCUMENTATION.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\TROUBLESHOOTING.md",
+            "deployment\\DEPLOYMENT_CHECKLIST.md",
+            "deployment\\MANUAL_UPLOAD.md",
+            "deployment\\README.md"
+          ],
+          "reason": "多个文档涉及相同主题: cleanup",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "DEPLOYMENT_GUIDE.md",
+            "FINAL_CLEANUP_COMPLETE.md",
+            "FINAL_DEPLOYMENT_SUMMARY.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+            "SOLUTION_SUMMARY.md",
+            "SYSTEM_READY.md",
+            "docs\\DEPLOYMENT_GUIDE.md",
+            "docs\\DEVELOPMENT_GUIDE.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md"
+          ],
+          "reason": "多个文档涉及相同主题: migration",
+          "type": "documentation"
+        },
+        {
+          "files": [
+            "FINAL_CLEANUP_COMPLETE.md",
+            "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+            "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+            "SYSTEM_READY.md",
+            "TOOL_COMPARISON.md",
+            "docs\\README.md",
+            "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+            "deployment\\GUI_USAGE.md"
+          ],
+          "reason": "多个文档涉及相同主题: legacy",
+          "type": "documentation"
+        }
+      ],
+      "directory_restructuring": [
+        {
+          "action": "创建 /archive 目录",
+          "reason": "存放历史文件和报告",
+          "files": "迁移脚本、清理报告等"
+        },
+        {
+          "action": "整理 /docs 目录",
+          "reason": "按主题组织文档",
+          "files": "合并重复的部署和使用指南"
+        }
+      ],
+      "maintenance_strategy": [
+        "定期清理 /reports 目录中的旧报告",
+        "合并重复的文档文件",
+        "移除完成使命的临时脚本",
+        "保持配置文件的最小化",
+        "建立文件命名规范"
+      ]
+    },
+    "migration_scripts": [
+      {
+        "file": "scripts\\cleanup_legacy_system.py",
+        "size": 15894,
+        "purpose": "legacy_cleanup",
+        "imports": [
+          "sys",
+          "shutil",
+          "sqlite3",
+          "pathlib",
+          "datetime",
+          "json"
+        ],
+        "last_modified": "2025-07-14T18:41:37.570673"
+      },
+      {
+        "file": "scripts\\final_cleanup_check.py",
+        "size": 13157,
+        "purpose": "legacy_cleanup",
+        "imports": [
+          "sys",
+          "shutil",
+          "pathlib",
+          "datetime",
+          "json"
+        ],
+        "last_modified": "2025-07-14T19:03:29.680892"
+      },
+      {
+        "file": "scripts\\integrate_simplified_api.py",
+        "size": 9742,
+        "purpose": "migration",
+        "imports": [
+          "sys",
+          "sqlite3",
+          "requests",
+          "json",
+          "pathlib",
+          "server.simplified_database",
+          "sqlalchemy"
+        ],
+        "last_modified": "2025-07-14T18:22:13.859195"
+      },
+      {
+        "file": "scripts\\migrate_to_simplified_system.py",
+        "size": 14899,
+        "purpose": "migration",
+        "imports": [
+          "sqlite3",
+          "json",
+          "sys",
+          "re",
+          "pathlib",
+          "datetime",
+          "typing"
+        ],
+        "last_modified": "2025-07-14T18:08:24.106746"
+      },
+      {
+        "file": "scripts\\remove_legacy_files.py",
+        "size": 11062,
+        "purpose": "legacy_cleanup",
+        "imports": [
+          "sys",
+          "shutil",
+          "pathlib",
+          "datetime",
+          "json"
+        ],
+        "last_modified": "2025-07-14T19:16:46.713371"
+      },
+      {
+        "file": "scripts\\test_legacy_import_fix.py",
+        "size": 11438,
+        "purpose": "bug_fix",
+        "imports": [
+          "sys",
+          "ast",
+          "importlib.util",
+          "pathlib",
+          "tools.upload.upload_tool",
+          "json",
+          "tools.upload.upload_tool",
+          "tools.upload.upload_tool"
+        ],
+        "last_modified": "2025-07-14T19:15:26.290727"
+      },
+      {
+        "file": "scripts\\verify_cleanup_success.py",
+        "size": 12709,
+        "purpose": "legacy_cleanup",
+        "imports": [
+          "sys",
+          "sqlite3",
+          "json",
+          "pathlib",
+          "tools.upload.upload_tool",
+          "tools.download.download_tool"
+        ],
+        "last_modified": "2025-07-14T18:43:58.457638"
+      }
+    ],
+    "test_scripts": [
+      {
+        "file": "scripts\\test_connection.py",
+        "size": 5941,
+        "purpose": "utility",
+        "imports": [
+          "sys",
+          "requests",
+          "json",
+          "pathlib",
+          "tools.common.common_utils"
+        ],
+        "last_modified": "2025-07-14T15:43:26.470852"
+      },
+      {
+        "file": "scripts\\test_original_upload_fix.py",
+        "size": 8970,
+        "purpose": "bug_fix",
+        "imports": [
+          "tempfile",
+          "sys",
+          "requests",
+          "hashlib",
+          "pathlib",
+          "tools.common.common_utils",
+          "json"
+        ],
+        "last_modified": "2025-07-14T18:14:11.954199"
+      },
+      {
+        "file": "scripts\\test_simplified_api.py",
+        "size": 11413,
+        "purpose": "migration",
+        "imports": [
+          "requests",
+          "json",
+          "tempfile",
+          "zipfile",
+          "pathlib",
+          "sys",
+          "shutil"
+        ],
+        "last_modified": "2025-07-14T18:23:11.354711"
+      },
+      {
+        "file": "scripts\\test_simplified_tools.py",
+        "size": 10651,
+        "purpose": "bug_fix",
+        "imports": [
+          "sys",
+          "tempfile",
+          "tkinter",
+          "pathlib",
+          "threading",
+          "time",
+          "tools.upload.simplified_upload_tool",
+          "tools.download.simplified_download_tool",
+          "tools.upload.upload_handler",
+          "tools.common.common_utils",
+          "tkinter",
+          "shutil"
+        ],
+        "last_modified": "2025-07-14T18:25:03.079440"
+      },
+      {
+        "file": "scripts\\test_upload_fix.py",
+        "size": 7325,
+        "purpose": "bug_fix",
+        "imports": [
+          "tempfile",
+          "sys",
+          "requests",
+          "pathlib",
+          "tools.common.common_utils",
+          "zipfile",
+          "shutil"
+        ],
+        "last_modified": "2025-07-14T18:12:08.146749"
+      }
+    ],
+    "utility_scripts": [
+      {
+        "file": "scripts\\build_download_tool.py",
+        "size": 11934,
+        "purpose": "bug_fix",
+        "imports": [
+          "os",
+          "sys",
+          "subprocess",
+          "shutil",
+          "pathlib",
+          "time",
+          "argparse",
+          "PyInstaller"
+        ],
+        "last_modified": "2025-07-14T17:53:07.396751"
+      },
+      {
+        "file": "scripts\\comprehensive_codebase_audit.py",
+        "size": 21705,
+        "purpose": "legacy_cleanup",
+        "imports": [
+          "sys",
+          "json",
+          "ast",
+          "pathlib",
+          "datetime",
+          "typing"
+        ],
+        "last_modified": "2025-07-14T19:21:57.708821"
+      },
+      {
+        "file": "scripts\\diagnose_upload_issue.py",
+        "size": 7767,
+        "purpose": "bug_fix",
+        "imports": [
+          "requests",
+          "json",
+          "sys",
+          "os",
+          "tempfile",
+          "pathlib",
+          "typing",
+          "tools.common.common_utils"
+        ],
+        "last_modified": "2025-07-14T18:00:56.354830"
+      },
+      {
+        "file": "scripts\\final_system_verification.py",
+        "size": 12242,
+        "purpose": "migration",
+        "imports": [
+          "sys",
+          "sqlite3",
+          "json",
+          "requests",
+          "pathlib",
+          "tools.upload.simplified_upload_tool",
+          "tools.download.simplified_download_tool"
+        ],
+        "last_modified": "2025-07-14T18:26:36.567571"
+      },
+      {
+        "file": "scripts\\remove_remaining_clutter.py",
+        "size": 8207,
+        "purpose": "legacy_cleanup",
+        "imports": [
+          "sys",
+          "shutil",
+          "os",
+          "pathlib"
+        ],
+        "last_modified": "2025-07-14T19:04:56.563416"
+      },
+      {
+        "file": "scripts\\set_cloud_base_version.py",
+        "size": 11662,
+        "purpose": "testing",
+        "imports": [
+          "sys",
+          "requests",
+          "json",
+          "sqlite3",
+          "pathlib",
+          "datetime",
+          "tools.common.common_utils"
+        ],
+        "last_modified": "2025-07-14T18:33:48.723638"
+      },
+      {
+        "file": "scripts\\validate_config.py",
+        "size": 10928,
+        "purpose": "utility",
+        "imports": [
+          "json",
+          "os",
+          "sys",
+          "pathlib",
+          "typing",
+          "tomllib",
+          "yaml",
+          "tomli"
+        ],
+        "last_modified": "2025-07-14T17:47:19.201888"
+      }
+    ],
+    "root_docs": [
+      {
+        "file": "CHANGELOG.md",
+        "size": 2819,
+        "lines": 92,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T15:00:33.676901"
+      },
+      {
+        "file": "CONTRIBUTING.md",
+        "size": 6057,
+        "lines": 321,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T15:00:05.590423"
+      },
+      {
+        "file": "DEPLOYMENT_GUIDE.md",
+        "size": 5322,
+        "lines": 252,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration",
+          "cleanup"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T18:41:50.124276"
+      },
+      {
+        "file": "DOCUMENTATION_UPDATE_SUMMARY.md",
+        "size": 5970,
+        "lines": 228,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:41:26.439512"
+      },
+      {
+        "file": "FINAL_CLEANUP_COMPLETE.md",
+        "size": 4958,
+        "lines": 178,
+        "topics": [
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration",
+          "cleanup",
+          "legacy"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T19:19:38.920738"
+      },
+      {
+        "file": "FINAL_DEPLOYMENT_SUMMARY.md",
+        "size": 6431,
+        "lines": 205,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration",
+          "cleanup"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T18:41:50.125266"
+      },
+      {
+        "file": "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+        "size": 6146,
+        "lines": 182,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "setup",
+          "migration",
+          "cleanup",
+          "legacy"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T18:44:50.784764"
+      },
+      {
+        "file": "PROJECT_SETUP_SUMMARY.md",
+        "size": 5787,
+        "lines": 246,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T15:24:31.708487"
+      },
+      {
+        "file": "PROJECT_STRUCTURE.md",
+        "size": 6633,
+        "lines": 177,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T14:41:26.441631"
+      },
+      {
+        "file": "README.md",
+        "size": 8494,
+        "lines": 247,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T15:01:16.517017"
+      },
+      {
+        "file": "REMOTE_SERVER_SETUP.md",
+        "size": 4853,
+        "lines": 209,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T15:46:20.932638"
+      },
+      {
+        "file": "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+        "size": 6301,
+        "lines": 150,
+        "topics": [
+          "usage",
+          "troubleshooting",
+          "migration",
+          "legacy"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T18:35:31.188521"
+      },
+      {
+        "file": "SOLUTION_SUMMARY.md",
+        "size": 5523,
+        "lines": 194,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T18:41:50.127265"
+      },
+      {
+        "file": "SYSTEM_READY.md",
+        "size": 2595,
+        "lines": 97,
+        "topics": [
+          "usage",
+          "api",
+          "migration",
+          "cleanup",
+          "legacy"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T19:05:04.856516"
+      },
+      {
+        "file": "TOOL_COMPARISON.md",
+        "size": 3734,
+        "lines": 146,
+        "topics": [
+          "usage",
+          "troubleshooting",
+          "setup",
+          "legacy"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T18:38:35.347739"
+      },
+      {
+        "file": "UPLOAD_TOOL_FIXES.md",
+        "size": 5282,
+        "lines": 199,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T16:13:22.160582"
+      }
+    ],
+    "docs_dir_files": [
+      {
+        "file": "docs\\API_DOCUMENTATION.md",
+        "size": 12734,
+        "lines": 537,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:41:26.445632"
+      },
+      {
+        "file": "docs\\DEPLOYMENT_GUIDE.md",
+        "size": 11575,
+        "lines": 560,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:41:26.446630"
+      },
+      {
+        "file": "docs\\DEVELOPMENT_GUIDE.md",
+        "size": 6942,
+        "lines": 280,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "setup",
+          "migration"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T14:41:26.446630"
+      },
+      {
+        "file": "docs\\README.md",
+        "size": 12222,
+        "lines": 396,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration",
+          "cleanup",
+          "legacy"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:41:26.447631"
+      },
+      {
+        "file": "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+        "size": 6939,
+        "lines": 205,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "migration",
+          "legacy"
+        ],
+        "mentions_legacy": true,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T18:03:47.040662"
+      },
+      {
+        "file": "docs\\TROUBLESHOOTING.md",
+        "size": 6525,
+        "lines": 290,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T14:41:26.447631"
+      }
+    ],
+    "deployment_docs": [
+      {
+        "file": "deployment\\DEPLOYMENT_CHECKLIST.md",
+        "size": 6814,
+        "lines": 277,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:06:10.244595"
+      },
+      {
+        "file": "deployment\\GUI_USAGE.md",
+        "size": 6853,
+        "lines": 227,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "legacy"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:06:10.245595"
+      },
+      {
+        "file": "deployment\\MANUAL_UPLOAD.md",
+        "size": 3851,
+        "lines": 166,
+        "topics": [
+          "deployment",
+          "usage",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T14:06:10.245595"
+      },
+      {
+        "file": "deployment\\QUICK_START.md",
+        "size": 3877,
+        "lines": 208,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T14:06:10.245595"
+      },
+      {
+        "file": "deployment\\README.md",
+        "size": 8959,
+        "lines": 424,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup",
+          "cleanup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:06:10.246593"
+      },
+      {
+        "file": "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+        "size": 7307,
+        "lines": 359,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": true,
+        "last_modified": "2025-07-14T14:06:10.246593"
+      },
+      {
+        "file": "deployment\\WINDOWS_DEPLOY.md",
+        "size": 5893,
+        "lines": 258,
+        "topics": [
+          "deployment",
+          "usage",
+          "api",
+          "troubleshooting",
+          "setup"
+        ],
+        "mentions_legacy": false,
+        "mentions_version_numbers": false,
+        "last_modified": "2025-07-14T14:06:10.246593"
+      }
+    ],
+    "redundant_doc_groups": [
+      {
+        "topic": "deployment",
+        "files": [
+          "CHANGELOG.md",
+          "CONTRIBUTING.md",
+          "DEPLOYMENT_GUIDE.md",
+          "DOCUMENTATION_UPDATE_SUMMARY.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "PROJECT_SETUP_SUMMARY.md",
+          "PROJECT_STRUCTURE.md",
+          "README.md",
+          "REMOTE_SERVER_SETUP.md",
+          "SOLUTION_SUMMARY.md",
+          "UPLOAD_TOOL_FIXES.md",
+          "docs\\API_DOCUMENTATION.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\DEVELOPMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+          "docs\\TROUBLESHOOTING.md",
+          "deployment\\DEPLOYMENT_CHECKLIST.md",
+          "deployment\\GUI_USAGE.md",
+          "deployment\\MANUAL_UPLOAD.md",
+          "deployment\\QUICK_START.md",
+          "deployment\\README.md",
+          "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+          "deployment\\WINDOWS_DEPLOY.md"
+        ],
+        "total_size": 169808
+      },
+      {
+        "topic": "usage",
+        "files": [
+          "CHANGELOG.md",
+          "CONTRIBUTING.md",
+          "DEPLOYMENT_GUIDE.md",
+          "DOCUMENTATION_UPDATE_SUMMARY.md",
+          "FINAL_CLEANUP_COMPLETE.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "PROJECT_SETUP_SUMMARY.md",
+          "PROJECT_STRUCTURE.md",
+          "README.md",
+          "REMOTE_SERVER_SETUP.md",
+          "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+          "SOLUTION_SUMMARY.md",
+          "SYSTEM_READY.md",
+          "TOOL_COMPARISON.md",
+          "UPLOAD_TOOL_FIXES.md",
+          "docs\\API_DOCUMENTATION.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\DEVELOPMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+          "docs\\TROUBLESHOOTING.md",
+          "deployment\\DEPLOYMENT_CHECKLIST.md",
+          "deployment\\GUI_USAGE.md",
+          "deployment\\MANUAL_UPLOAD.md",
+          "deployment\\QUICK_START.md",
+          "deployment\\README.md",
+          "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+          "deployment\\WINDOWS_DEPLOY.md"
+        ],
+        "total_size": 187396
+      },
+      {
+        "topic": "api",
+        "files": [
+          "CHANGELOG.md",
+          "CONTRIBUTING.md",
+          "DEPLOYMENT_GUIDE.md",
+          "DOCUMENTATION_UPDATE_SUMMARY.md",
+          "FINAL_CLEANUP_COMPLETE.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "PROJECT_SETUP_SUMMARY.md",
+          "PROJECT_STRUCTURE.md",
+          "README.md",
+          "REMOTE_SERVER_SETUP.md",
+          "SOLUTION_SUMMARY.md",
+          "SYSTEM_READY.md",
+          "UPLOAD_TOOL_FIXES.md",
+          "docs\\API_DOCUMENTATION.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\DEVELOPMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+          "docs\\TROUBLESHOOTING.md",
+          "deployment\\DEPLOYMENT_CHECKLIST.md",
+          "deployment\\GUI_USAGE.md",
+          "deployment\\QUICK_START.md",
+          "deployment\\README.md",
+          "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+          "deployment\\WINDOWS_DEPLOY.md"
+        ],
+        "total_size": 173510
+      },
+      {
+        "topic": "troubleshooting",
+        "files": [
+          "CHANGELOG.md",
+          "CONTRIBUTING.md",
+          "DEPLOYMENT_GUIDE.md",
+          "DOCUMENTATION_UPDATE_SUMMARY.md",
+          "FINAL_CLEANUP_COMPLETE.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "PROJECT_SETUP_SUMMARY.md",
+          "PROJECT_STRUCTURE.md",
+          "README.md",
+          "REMOTE_SERVER_SETUP.md",
+          "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+          "SOLUTION_SUMMARY.md",
+          "TOOL_COMPARISON.md",
+          "UPLOAD_TOOL_FIXES.md",
+          "docs\\API_DOCUMENTATION.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+          "docs\\TROUBLESHOOTING.md",
+          "deployment\\DEPLOYMENT_CHECKLIST.md",
+          "deployment\\GUI_USAGE.md",
+          "deployment\\MANUAL_UPLOAD.md",
+          "deployment\\QUICK_START.md",
+          "deployment\\README.md",
+          "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+          "deployment\\WINDOWS_DEPLOY.md"
+        ],
+        "total_size": 171713
+      },
+      {
+        "topic": "setup",
+        "files": [
+          "CHANGELOG.md",
+          "CONTRIBUTING.md",
+          "DEPLOYMENT_GUIDE.md",
+          "DOCUMENTATION_UPDATE_SUMMARY.md",
+          "FINAL_CLEANUP_COMPLETE.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "PROJECT_SETUP_SUMMARY.md",
+          "PROJECT_STRUCTURE.md",
+          "README.md",
+          "REMOTE_SERVER_SETUP.md",
+          "SOLUTION_SUMMARY.md",
+          "TOOL_COMPARISON.md",
+          "docs\\API_DOCUMENTATION.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\DEVELOPMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+          "docs\\TROUBLESHOOTING.md",
+          "deployment\\DEPLOYMENT_CHECKLIST.md",
+          "deployment\\GUI_USAGE.md",
+          "deployment\\MANUAL_UPLOAD.md",
+          "deployment\\QUICK_START.md",
+          "deployment\\README.md",
+          "deployment\\SIMPLE_DEPLOY_GUIDE.md",
+          "deployment\\WINDOWS_DEPLOY.md"
+        ],
+        "total_size": 173218
+      },
+      {
+        "topic": "cleanup",
+        "files": [
+          "CHANGELOG.md",
+          "DEPLOYMENT_GUIDE.md",
+          "FINAL_CLEANUP_COMPLETE.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "README.md",
+          "SYSTEM_READY.md",
+          "docs\\API_DOCUMENTATION.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\TROUBLESHOOTING.md",
+          "deployment\\DEPLOYMENT_CHECKLIST.md",
+          "deployment\\MANUAL_UPLOAD.md",
+          "deployment\\README.md"
+        ],
+        "total_size": 99445
+      },
+      {
+        "topic": "migration",
+        "files": [
+          "DEPLOYMENT_GUIDE.md",
+          "FINAL_CLEANUP_COMPLETE.md",
+          "FINAL_DEPLOYMENT_SUMMARY.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+          "SOLUTION_SUMMARY.md",
+          "SYSTEM_READY.md",
+          "docs\\DEPLOYMENT_GUIDE.md",
+          "docs\\DEVELOPMENT_GUIDE.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md"
+        ],
+        "total_size": 74954
+      },
+      {
+        "topic": "legacy",
+        "files": [
+          "FINAL_CLEANUP_COMPLETE.md",
+          "LEGACY_SYSTEM_CLEANUP_SUMMARY.md",
+          "SIMPLIFIED_SYSTEM_EXPLANATION.md",
+          "SYSTEM_READY.md",
+          "TOOL_COMPARISON.md",
+          "docs\\README.md",
+          "docs\\SIMPLIFIED_VERSION_SYSTEM_DESIGN.md",
+          "deployment\\GUI_USAGE.md"
+        ],
+        "total_size": 49748
+      }
+    ]
+  },
+  "summary": {
+    "total_scripts": 21,
+    "total_docs": 29,
+    "reports_count": 7,
+    "config_count": 5
+  }
+}

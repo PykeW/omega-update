@@ -32,9 +32,10 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_db():
-    """获取数据库会话（需要根据实际项目配置）"""
-    # 这里需要根据实际的数据库配置来实现
-    pass
+    """获取数据库会话"""
+    # 导入现有的数据库会话
+    from server.enhanced_database import get_db as get_enhanced_db
+    return get_enhanced_db()
 
 
 def verify_api_key(api_key: str):
@@ -58,48 +59,48 @@ async def upload_simple_version(
     自动覆盖同类型的旧版本
     """
     logger.info(f"收到简化上传请求: type={version_type}, platform={platform}, arch={architecture}")
-    
+
     # 验证API密钥
     verify_api_key(api_key)
-    
+
     # 验证版本类型
     if version_type not in ['stable', 'beta', 'alpha']:
         raise HTTPException(status_code=400, detail=f"不支持的版本类型: {version_type}")
-    
+
     # 验证平台和架构
     if platform not in ['windows', 'linux', 'macos']:
         raise HTTPException(status_code=400, detail=f"不支持的平台: {platform}")
-    
+
     if architecture not in ['x64', 'x86', 'arm64']:
         raise HTTPException(status_code=400, detail=f"不支持的架构: {architecture}")
-    
+
     try:
         # 读取文件内容
         file_content = await file.read()
         file_size = len(file_content)
-        
+
         # 计算文件哈希
         file_hash = hashlib.sha256(file_content).hexdigest()
-        
+
         # 构建文件存储路径
         file_dir = UPLOAD_DIR / platform / architecture / version_type
         file_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # 使用原始文件名，但确保唯一性
         file_name = file.filename or f"{version_type}.zip"
         file_path = file_dir / file_name
-        
+
         # 保存文件
         with open(file_path, "wb") as f:
             f.write(file_content)
-        
+
         # 准备上传者信息
         uploader_info = json.dumps({
             "upload_time": datetime.now().isoformat(),
             "file_name": file_name,
             "content_type": file.content_type
         })
-        
+
         # 使用版本管理器上传
         version_manager = SimplifiedVersionManager(db)
         new_version = version_manager.upload_version(
@@ -112,19 +113,108 @@ async def upload_simple_version(
             description=description,
             uploader_info=uploader_info
         )
-        
+
         logger.info(f"简化版本上传成功: {version_type}/{platform}/{architecture}")
-        
+
         return {
             "success": True,
             "message": "版本上传成功",
             "version": new_version.to_dict(),
             "download_url": f"/api/v2/download/simple/{version_type}/{platform}/{architecture}"
         }
-        
+
     except Exception as e:
         logger.error(f"简化版本上传失败: {e}")
         raise HTTPException(status_code=500, detail=f"上传失败: {str(e)}")
+
+
+@router.post("/upload/simple/file")
+async def upload_simple_file(
+    file: UploadFile = File(...),
+    version_type: str = Form(...),
+    platform: str = Form("windows"),
+    architecture: str = Form("x64"),
+    relative_path: str = Form(...),
+    description: Optional[str] = Form(None),
+    file_hash: Optional[str] = Form(None),
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    上传单个文件到简化版本系统
+    支持保持文件夹结构的直接文件上传
+    """
+    logger.info(f"收到单文件上传请求: type={version_type}, platform={platform}, arch={architecture}, path={relative_path}")
+
+    # 验证API密钥
+    verify_api_key(api_key)
+
+    # 验证版本类型
+    if version_type not in ['stable', 'beta', 'alpha']:
+        raise HTTPException(status_code=400, detail=f"不支持的版本类型: {version_type}")
+
+    # 验证平台和架构
+    if platform not in ['windows', 'linux', 'macos']:
+        raise HTTPException(status_code=400, detail=f"不支持的平台: {platform}")
+
+    if architecture not in ['x64', 'x86', 'arm64']:
+        raise HTTPException(status_code=400, detail=f"不支持的架构: {architecture}")
+
+    try:
+        # 读取文件内容
+        file_content = await file.read()
+        file_size = len(file_content)
+
+        # 计算文件哈希（如果未提供）
+        calculated_hash = hashlib.sha256(file_content).hexdigest()
+        if file_hash and file_hash != calculated_hash:
+            raise HTTPException(status_code=400, detail="文件哈希验证失败")
+
+        # 构建文件存储路径，保持文件夹结构
+        file_dir = UPLOAD_DIR / platform / architecture / version_type
+
+        # 处理相对路径，确保目录结构
+        relative_path_obj = Path(relative_path)
+        if relative_path_obj.parent != Path('.'):
+            file_dir = file_dir / relative_path_obj.parent
+
+        file_dir.mkdir(parents=True, exist_ok=True)
+
+        # 使用相对路径中的文件名
+        file_name = relative_path_obj.name
+        file_path = file_dir / file_name
+
+        # 保存文件
+        with open(file_path, "wb") as f:
+            f.write(file_content)
+
+        # 记录文件到数据库
+        version_manager = SimplifiedVersionManager(db)
+        new_file = version_manager.upload_file(
+            version_type=version_type,
+            platform=platform,
+            architecture=architecture,
+            relative_path=relative_path,
+            file_name=file_name,
+            file_size=file_size,
+            file_hash=calculated_hash,
+            storage_path=str(file_path)
+        )
+
+        logger.info(f"单文件上传成功: {version_type}/{platform}/{architecture}/{relative_path}")
+
+        return {
+            "success": True,
+            "message": "文件上传成功",
+            "file_path": str(relative_path),
+            "file_size": file_size,
+            "file_hash": calculated_hash,
+            "file_id": new_file.id
+        }
+
+    except Exception as e:
+        logger.error(f"单文件上传失败: {e}")
+        raise HTTPException(status_code=500, detail=f"文件上传失败: {str(e)}")
 
 
 @router.get("/versions/simple")
@@ -140,22 +230,22 @@ async def get_simple_versions(
     try:
         version_manager = SimplifiedVersionManager(db)
         versions = version_manager.get_versions(platform, architecture)
-        
+
         result = {}
         for version_type, version in versions.items():
             if version:
                 result[version_type] = {
                     "description": version.description,
-                    "upload_date": version.upload_date.isoformat() if version.upload_date else None,
+                    "upload_date": version.upload_date.isoformat() if version.upload_date is not None else None,
                     "file_size": version.file_size,
                     "file_hash": version.file_hash,
                     "download_url": f"/api/v2/download/simple/{version_type}/{platform}/{architecture}"
                 }
             else:
                 result[version_type] = None
-        
+
         return result
-        
+
     except Exception as e:
         logger.error(f"获取简化版本列表失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取版本列表失败: {str(e)}")
@@ -174,23 +264,23 @@ async def download_simple_version(
     try:
         version_manager = SimplifiedVersionManager(db)
         version = version_manager.get_version(version_type, platform, architecture)
-        
+
         if not version:
             raise HTTPException(status_code=404, detail="版本不存在")
-        
-        file_path = Path(version.file_path)
+
+        file_path = Path(str(version.file_path))
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="文件不存在")
-        
+
         # 构建下载文件名
         file_name = f"{version_type}_{platform}_{architecture}.zip"
-        
+
         return FileResponse(
             path=str(file_path),
             filename=file_name,
             media_type='application/octet-stream'
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -211,12 +301,12 @@ async def get_simple_version_info(
     try:
         version_manager = SimplifiedVersionManager(db)
         version = version_manager.get_version(version_type, platform, architecture)
-        
+
         if not version:
             raise HTTPException(status_code=404, detail="版本不存在")
-        
+
         return version.to_dict()
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -237,19 +327,19 @@ async def delete_simple_version(
     """
     # 验证API密钥
     verify_api_key(api_key)
-    
+
     try:
         version_manager = SimplifiedVersionManager(db)
         success = version_manager.delete_version(version_type, platform, architecture)
-        
+
         if not success:
             raise HTTPException(status_code=404, detail="版本不存在")
-        
+
         return {
             "success": True,
             "message": f"版本 {version_type} 删除成功"
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -271,9 +361,9 @@ async def get_simple_version_history(
     try:
         version_manager = SimplifiedVersionManager(db)
         history = version_manager.get_history(version_type, platform, architecture, limit)
-        
+
         return [record.to_dict() for record in history]
-        
+
     except Exception as e:
         logger.error(f"获取版本历史失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取历史记录失败: {str(e)}")
@@ -286,15 +376,15 @@ async def get_simple_system_status(db: Session = Depends(get_db)):
     """
     try:
         version_manager = SimplifiedVersionManager(db)
-        
+
         # 统计各平台版本数量
         platforms = ['windows', 'linux', 'macos']
         architectures = ['x64', 'x86', 'arm64']
         version_types = ['stable', 'beta', 'alpha']
-        
+
         stats = {}
         total_versions = 0
-        
+
         for platform in platforms:
             stats[platform] = {}
             for arch in architectures:
@@ -305,7 +395,7 @@ async def get_simple_system_status(db: Session = Depends(get_db)):
                     'count': len(available_types)
                 }
                 total_versions += len(available_types)
-        
+
         return {
             "system": "simplified_version_management",
             "status": "running",
@@ -313,7 +403,7 @@ async def get_simple_system_status(db: Session = Depends(get_db)):
             "platforms": stats,
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"获取系统状态失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取状态失败: {str(e)}")
