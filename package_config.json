@@ -1,0 +1,70 @@
+{
+  "package_info": {
+    "name": "Omega更新系统",
+    "version": "2.0.0",
+    "description": "支持增量更新的三版本管理系统",
+    "author": "Omega Team",
+    "created_date": "2025-07-15"
+  },
+  "download_config": {
+    "server": {
+      "url": "http://106.14.28.97:8000",
+      "api_version": "v2",
+      "timeout": 60
+    },
+    "version_types": {
+      "stable": {
+        "name": "稳定版",
+        "description": "经过充分测试的稳定版本",
+        "priority": 1
+      },
+      "beta": {
+        "name": "测试版", 
+        "description": "功能完整的测试版本",
+        "priority": 2
+      },
+      "alpha": {
+        "name": "开发版",
+        "description": "最新功能的开发版本",
+        "priority": 3
+      }
+    },
+    "platforms": {
+      "windows": {
+        "architectures": ["x64", "x86"],
+        "default_architecture": "x64"
+      },
+      "linux": {
+        "architectures": ["x64", "arm64"],
+        "default_architecture": "x64"
+      },
+      "macos": {
+        "architectures": ["x64", "arm64"],
+        "default_architecture": "x64"
+      }
+    },
+    "download_settings": {
+      "chunk_size": 65536,
+      "max_retries": 3,
+      "verify_checksums": true,
+      "create_backup": true,
+      "parallel_downloads": 4
+    }
+  },
+  "ui_config": {
+    "theme": "default",
+    "language": "zh_CN",
+    "window_size": {
+      "width": 800,
+      "height": 600
+    },
+    "auto_check_updates": true,
+    "show_progress_details": true
+  },
+  "paths": {
+    "download_directory": "./downloads",
+    "temp_directory": "./temp",
+    "log_directory": "./logs",
+    "config_directory": "./config"
+  }
+}
