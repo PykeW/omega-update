@@ -369,6 +369,136 @@ async def get_simple_version_history(
         raise HTTPException(status_code=500, detail=f"获取历史记录失败: {str(e)}")
 
 
+@router.get("/files/simple/{version_type}")
+async def get_simple_version_files(
+    version_type: str,
+    platform: str = "windows",
+    architecture: str = "x64",
+    db: Session = Depends(get_db)
+):
+    """
+    获取指定版本类型的文件列表
+    """
+    try:
+        version_manager = SimplifiedVersionManager(db)
+        files = version_manager.get_version_files(version_type, platform, architecture)
+
+        result = []
+        total_size = 0
+
+        for file_record in files:
+            file_info = {
+                "relative_path": file_record.relative_path,
+                "file_name": file_record.file_name,
+                "file_size": file_record.file_size,
+                "file_hash": file_record.file_hash,
+                "upload_date": file_record.upload_date.isoformat() if file_record.upload_date else None,
+                "storage_path": file_record.storage_path
+            }
+            result.append(file_info)
+            total_size += file_record.file_size
+
+        return {
+            "version_type": version_type,
+            "platform": platform,
+            "architecture": architecture,
+            "files": result,
+            "total_files": len(result),
+            "total_size": total_size
+        }
+
+    except Exception as e:
+        logger.error(f"获取文件列表失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
+
+
+@router.delete("/files/simple/{version_type}")
+async def delete_simple_version_file(
+    version_type: str,
+    relative_path: str = Form(...),
+    platform: str = Form("windows"),
+    architecture: str = Form("x64"),
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    删除指定版本类型中的单个文件
+    """
+    # 验证API密钥
+    verify_api_key(api_key)
+
+    try:
+        version_manager = SimplifiedVersionManager(db)
+        success = version_manager.delete_version_file(version_type, platform, architecture, relative_path)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="文件不存在")
+
+        return {
+            "success": True,
+            "message": f"文件 {relative_path} 删除成功"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"删除文件失败: {e}")
+        raise HTTPException(status_code=500, detail=f"删除文件失败: {str(e)}")
+
+
+@router.post("/sync/simple/{version_type}")
+async def sync_simple_version_files(
+    version_type: str,
+    platform: str = Form("windows"),
+    architecture: str = Form("x64"),
+    local_files: str = Form(...),  # JSON格式的本地文件列表
+    api_key: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    同步版本文件：删除云端多余的文件
+    """
+    # 验证API密钥
+    verify_api_key(api_key)
+
+    try:
+        import json
+        local_file_list = json.loads(local_files)
+        local_paths = set(file_info.get("relative_path", "") for file_info in local_file_list)
+
+        version_manager = SimplifiedVersionManager(db)
+        remote_files = version_manager.get_version_files(version_type, platform, architecture)
+
+        deleted_files = []
+        for remote_file in remote_files:
+            if remote_file.relative_path not in local_paths:
+                # 删除云端多余的文件
+                success = version_manager.delete_version_file(
+                    version_type, platform, architecture, remote_file.relative_path
+                )
+                if success:
+                    deleted_files.append(remote_file.relative_path)
+                    # 删除物理文件
+                    try:
+                        file_path = Path(remote_file.storage_path)
+                        if file_path.exists():
+                            file_path.unlink()
+                    except Exception as e:
+                        logger.warning(f"删除物理文件失败 {remote_file.storage_path}: {e}")
+
+        return {
+            "success": True,
+            "message": f"同步完成，删除了 {len(deleted_files)} 个多余文件",
+            "deleted_files": deleted_files
+        }
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="本地文件列表格式错误")
+    except Exception as e:
+        logger.error(f"文件同步失败: {e}")
+        raise HTTPException(status_code=500, detail=f"文件同步失败: {str(e)}")
+
+
 @router.get("/status/simple")
 async def get_simple_system_status(db: Session = Depends(get_db)):
     """
@@ -380,7 +510,6 @@ async def get_simple_system_status(db: Session = Depends(get_db)):
         # 统计各平台版本数量
         platforms = ['windows', 'linux', 'macos']
         architectures = ['x64', 'x86', 'arm64']
-        version_types = ['stable', 'beta', 'alpha']
 
         stats = {}
         total_versions = 0

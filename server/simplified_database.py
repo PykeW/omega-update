@@ -391,6 +391,36 @@ class SimplifiedVersionManager:
 
         return True
 
+    def delete_version_file(self, version_type: str, platform: str, architecture: str,
+                           relative_path: str) -> bool:
+        """
+        删除指定版本中的单个文件
+
+        Args:
+            version_type: 版本类型
+            platform: 平台
+            architecture: 架构
+            relative_path: 文件相对路径
+
+        Returns:
+            是否删除成功
+        """
+        file_record = self.db.query(SimplifiedVersionFile).filter(
+            SimplifiedVersionFile.version_type == version_type,
+            SimplifiedVersionFile.platform == platform,
+            SimplifiedVersionFile.architecture == architecture,
+            SimplifiedVersionFile.relative_path == relative_path
+        ).first()
+
+        if not file_record:
+            return False
+
+        # 删除文件记录
+        self.db.delete(file_record)
+        self.db.commit()
+
+        return True
+
     def get_history(self, version_type: Optional[str] = None,
                    platform: str = "windows", architecture: str = "x64",
                    limit: int = 50) -> list:

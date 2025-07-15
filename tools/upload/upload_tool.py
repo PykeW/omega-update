@@ -16,8 +16,10 @@ from typing import Optional, Dict, Any
 # 添加项目路径
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from tools.common.common_utils import get_config, get_server_url, get_api_key
+from tools.common.common_utils import get_config, get_server_url, get_api_key, LogManager
 from tools.upload.upload_handler import UploadHandler
+from tools.upload.incremental_uploader import IncrementalUploader
+from tools.upload.difference_viewer import show_difference_report
 
 
 class SimplifiedUploadTool:
@@ -40,10 +42,14 @@ class SimplifiedUploadTool:
         self.platform_var = tk.StringVar(value="windows")
         self.architecture_var = tk.StringVar(value="x64")
         self.description_var = tk.StringVar()
+        self.incremental_mode_var = tk.BooleanVar(value=True)
+        self.enable_sync_var = tk.BooleanVar(value=True)
 
         # 状态变量
         self.is_uploading = False
         self.upload_handler = UploadHandler()
+        self.incremental_uploader = IncrementalUploader()
+        self.log_manager = LogManager()
 
         # 创建界面
         self.create_widgets()
@@ -142,6 +148,28 @@ class SimplifiedUploadTool:
 
         row += 1
 
+        # 上传模式选择
+        mode_frame = ttk.LabelFrame(main_frame, text="🚀 上传模式", padding="10")
+        mode_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(0, 10))
+
+        # 增量上传选项
+        incremental_check = ttk.Checkbutton(mode_frame, text="启用增量上传（智能对比，只上传变化的文件）",
+                                          variable=self.incremental_mode_var,
+                                          command=self.on_incremental_mode_changed)
+        incremental_check.grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 5))
+
+        # 同步删除选项
+        self.sync_check = ttk.Checkbutton(mode_frame, text="启用云端同步（删除云端多余的文件）",
+                                        variable=self.enable_sync_var)
+        self.sync_check.grid(row=1, column=0, columnspan=2, sticky=tk.W, padx=(20, 0))
+
+        # 差异分析按钮
+        self.analyze_button = ttk.Button(mode_frame, text="分析差异",
+                                       command=self.analyze_differences)
+        self.analyze_button.grid(row=2, column=0, pady=(10, 0), sticky=tk.W)
+
+        row += 1
+
         # 高级选项
         advanced_frame = ttk.LabelFrame(main_frame, text="⚙️ 高级选项", padding="10")
         advanced_frame.grid(row=row, column=0, columnspan=2, sticky=tk.W + tk.E, pady=(0, 10))
@@ -198,6 +226,56 @@ class SimplifiedUploadTool:
         if folder:
             self.folder_path_var.set(folder)
             self.status_var.set(f"已选择文件夹: {folder}")
+
+    def on_incremental_mode_changed(self):
+        """增量模式变化事件"""
+        if self.incremental_mode_var.get():
+            self.sync_check.config(state="normal")
+            self.analyze_button.config(state="normal")
+        else:
+            self.sync_check.config(state="disabled")
+            self.analyze_button.config(state="disabled")
+
+    def analyze_differences(self):
+        """分析文件差异"""
+        folder_path = self.folder_path_var.get()
+        if not folder_path:
+            messagebox.showwarning("警告", "请先选择文件夹")
+            return
+
+        if not Path(folder_path).exists():
+            messagebox.showerror("错误", "选择的文件夹不存在")
+            return
+
+        version_type = self.version_type_var.get()
+        platform = self.platform_var.get()
+        architecture = self.architecture_var.get()
+
+        try:
+            # 显示分析进度
+            self.progress_var.set("正在分析文件差异...")
+            self.progress_bar.config(mode='indeterminate')
+            self.progress_bar.start()
+            self.root.update()
+
+            # 分析差异
+            report = self.incremental_uploader.analyze_folder_differences(
+                folder_path, version_type, platform, architecture
+            )
+
+            # 停止进度条
+            self.progress_bar.stop()
+            self.progress_bar.config(mode='determinate', value=0)
+            self.progress_var.set("差异分析完成")
+
+            # 显示差异报告
+            show_difference_report(self.root, report)
+
+        except Exception as e:
+            self.progress_bar.stop()
+            self.progress_bar.config(mode='determinate', value=0)
+            self.progress_var.set("差异分析失败")
+            messagebox.showerror("错误", f"差异分析失败: {e}")
 
     def preview_folder(self):
         """预览文件夹内容"""
@@ -280,14 +358,44 @@ class SimplifiedUploadTool:
             }
             description = f"{version_names.get(version_type, version_type)}更新 - {timestamp}"
 
-        # 确认上传
+        # 根据上传模式确认上传
         version_names = {
             "stable": "🟢 稳定版 (Stable)",
             "beta": "🟡 测试版 (Beta)",
             "alpha": "🔴 新功能测试版 (Alpha)"
         }
 
-        confirm_msg = f"""
+        if self.incremental_mode_var.get():
+            # 增量上传模式：先分析差异，然后确认
+            try:
+                # 分析差异
+                self.progress_var.set("分析文件差异...")
+                self.progress_bar.config(mode='indeterminate')
+                self.progress_bar.start()
+                self.root.update()
+
+                report = self.incremental_uploader.analyze_folder_differences(
+                    folder_path, version_type, platform, architecture
+                )
+
+                self.progress_bar.stop()
+                self.progress_bar.config(mode='determinate', value=0)
+                self.progress_var.set("差异分析完成")
+
+                # 显示差异报告并获取用户确认
+                if not show_difference_report(self.root, report):
+                    self.progress_var.set("用户取消上传")
+                    return
+
+            except Exception as e:
+                self.progress_bar.stop()
+                self.progress_bar.config(mode='determinate', value=0)
+                self.progress_var.set("差异分析失败")
+                messagebox.showerror("错误", f"差异分析失败: {e}")
+                return
+        else:
+            # 传统上传模式：直接确认
+            confirm_msg = f"""
 📤 确认上传信息：
 
 📁 文件夹: {Path(folder_path).name}
@@ -302,10 +410,10 @@ class SimplifiedUploadTool:
 • 此操作不可撤销
 
 是否确认上传？
-        """
+            """
 
-        if not messagebox.askyesno("确认上传", confirm_msg.strip()):
-            return
+            if not messagebox.askyesno("确认上传", confirm_msg.strip()):
+                return
 
         # 开始上传
         self.is_uploading = True
@@ -325,10 +433,16 @@ class SimplifiedUploadTool:
                       platform: str, architecture: str, description: str):
         """上传工作线程"""
         try:
-            # 使用新的简化上传API
-            success = self._upload_simplified(
-                folder_path, version_type, platform, architecture, description
-            )
+            if self.incremental_mode_var.get():
+                # 增量上传模式
+                success = self._upload_incremental(
+                    folder_path, version_type, platform, architecture, description
+                )
+            else:
+                # 传统上传模式
+                success = self._upload_simplified(
+                    folder_path, version_type, platform, architecture, description
+                )
 
             if success:
                 self.root.after(0, lambda: self._upload_success())
@@ -337,6 +451,32 @@ class SimplifiedUploadTool:
 
         except Exception as e:
             self.root.after(0, lambda: self._upload_failed(str(e)))
+
+    def _upload_incremental(self, folder_path: str, version_type: str,
+                           platform: str, architecture: str, description: str) -> bool:
+        """增量上传方法"""
+        try:
+            # 准备进度回调
+            def progress_callback(progress, message):
+                self.root.after(0, lambda: self.progress_var.set(message))
+                self.root.after(0, lambda: self.progress_bar.config(value=progress))
+
+            # 执行增量上传
+            success = self.incremental_uploader.perform_incremental_upload(
+                folder_path=folder_path,
+                version_type=version_type,
+                platform=platform,
+                architecture=architecture,
+                description=description,
+                enable_sync=self.enable_sync_var.get(),
+                progress_callback=progress_callback
+            )
+
+            return success
+
+        except Exception as e:
+            print(f"增量上传异常: {e}")
+            return False
 
     def _upload_simplified(self, folder_path: str, version_type: str,
                           platform: str, architecture: str, description: str) -> bool:
@@ -407,7 +547,7 @@ def main():
     except:
         pass  # 如果主题文件不存在，使用默认主题
 
-    app = SimplifiedUploadTool(root)
+    upload_tool = SimplifiedUploadTool(root)
     root.mainloop()
 
 
